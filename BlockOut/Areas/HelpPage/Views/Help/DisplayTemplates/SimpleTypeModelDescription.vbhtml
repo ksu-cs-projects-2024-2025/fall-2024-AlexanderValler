@@ -1,0 +1,3 @@
+@Imports BlockOut.Areas.HelpPage.ModelDescriptions
+@ModelType SimpleTypeModelDescription
+@Model.Documentation
