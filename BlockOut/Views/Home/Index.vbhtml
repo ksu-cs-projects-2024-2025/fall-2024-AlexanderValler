@@ -4,6 +4,17 @@
 <div class="jumbotron">
     <h1>Number one in automatic scheduling</h1>
     <p class="lead">Your online scheduler for all your scheduling needs</p>
+
+    <form method="post" enctype="multipart/form-data">
+        <!-- Other input fields -->
+        <div class="form-group">
+            <label for="csvFile">Upload CSV File:</label>
+            <input type="file" id="csvFile" name="csvFile" accept=".csv" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+
 </div>
 
 <div class="row">
