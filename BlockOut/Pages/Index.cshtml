@@ -1,16 +1,75 @@
 ﻿@page
-@model IndexModel
+@model BlockOut.Pages.IndexModel
 @{
-    ViewData["BlockOut"] = "Home page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-    
-    <h1>Scheduler Result</h1>
-    <p>@Model.Result</p>
+<div class="main-container">
+    <div class="jumbotron text-center">
+        <h1 class="display-4">Welcome to BlockOut</h1>
+        <p class="lead">BlockOut is your solution for efficient scheduling and management.</p>
+        <hr class="my-4">
+        <p>Manage your time, block distractions, and optimize your workflow.</p>
 
+        @if (User.Identity.IsAuthenticated)
+        {
+            <p class="lead">
+                Welcome back, @User.Identity.Name!
+                <a class="btn btn-primary btn-lg" asp-page="/Account/Manage" role="button">Manage Your Account</a>
+            </p>
+        }
+        else
+        {
+            <p class="lead">
+                <a class="btn btn-primary btn-lg" asp-page="/Account/Login" role="button">Log In</a>
+                <a class="btn btn-secondary btn-lg" asp-page="/Account/Register" role="button">Register</a>
+            </p>
+        }
+    </div>
 
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card">
+                <img class="card-img-top" src="~/images/feature1.jpg" alt="Feature 1">
+                <div class="card-body">
+                    <h5 class="card-title">Easy Scheduling</h5>
+                    <p class="card-text">Effortlessly organize your tasks and appointments with our intuitive scheduling tool.</p>
+                    <a href="#" class="btn btn-primary">Learn More</a>
+                </div>
+            </div>
+        </div>
 
+        <div class="col-md-4">
+            <div class="card">
+                <img class="card-img-top" src="~/images/feature2.jpg" alt="Feature 2">
+                <div class="card-body">
+                    <h5 class="card-title">Distraction Blocking</h5>
+                    <p class="card-text">Block distracting websites and apps during your focus sessions to maximize productivity.</p>
+                    <a href="#" class="btn btn-primary">Learn More</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <img class="card-img-top" src="~/images/feature3.jpg" alt="Feature 3">
+                <div class="card-body">
+                    <h5 class="card-title">Custom Reminders</h5>
+                    <p class="card-text">Set custom reminders to ensure you never miss an important event or deadline.</p>
+                    <a href="#" class="btn btn-primary">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="bottomtext">
+        Welcome to BlockOut, your go-to scheduling application designed to simplify the process of creating and managing schedules. Our powerful algorithms analyze your preferences and constraints, enabling you to generate optimized schedules tailored to your unique needs. Whether you are planning a personal agenda, organizing team tasks, or managing complex workflows, BlockOut provides you with various options to customize your scheduling experience.
+
+        With BlockOut, you can easily select different variations of your schedule, ensuring flexibility and efficiency. Explore the possibilities, streamline your planning, and take control of your time with ease. Join us on this journey to revolutionize the way you manage your schedules and enhance your productivity!
+    </p>
 </div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+}

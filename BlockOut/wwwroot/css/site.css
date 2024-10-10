@@ -1,18 +1,126 @@
-html {
-  font-size: 14px;
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to right, #808080 0%, #F1F1F1 10%, #F1F1F1 90%, #808080 100%);
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html {
+        font-size: 16px;
+    }
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+}
+
+.main-container {
+    padding: 30px;
+    border-radius: 10px;
+}
+
+.navbar {
+    background-color: #1C1C1C !important; /* Dark grey background */
+    border-bottom: 6px solid #3466AA !important; /* Light blue bottom border */
+    font-size: 20px;
+}
+
+.navbar .nav-link {
+    color: white !important; /* Set navbar text to white */
+}
+
+.navbar .nav-link:hover {
+    color: #8ec1ff !important; /* Change text color to light blue on hover */
+}
+
+.navbar-brand img {
+    display: block; /* Ensures no extra space around the image */
+    padding-left: 20%;
+}
+
+.navbar-nav .nav-item {
+    margin-left: 35px; /* Fine-tune spacing between items */
+}
+
+.navbar-toggler {
+    color: #3466AA !important; /* Change the border color of the toggler */
+}
+
+.navbar-toggler-icon {
+    background-image: none !important; /* Remove default background image for the icon */
+}
+
+
+.navbar-toggler-icon::before,
+.navbar-toggler-icon::after {
+    content: ''; /* Ensure content is set for pseudo-elements */
+    display: block;
+    width: 27px; /* Adjust width as needed */
+    height: 4px; /* Adjust height as needed */
+    background-color: #F1F1F1; /* Set the desired color for the lines */
+    margin: 6px auto; /* Center the lines */
+}
+
+.bottomtext {
+    margin-top: 30px;
+    font-size: 16px; 
+    line-height: 1.5;
+    color: #333;
+    padding: 15px;
+}
+
+.btn {
+    background-color: #8ec1ff; /* Set the background color */
+    color: #fff; /* Change text color to white */
+    border-color: #8ec1ff; /* Match border color to background */
+}
+
+.btn:hover {
+    background-color: #7db0e5; /* Darker shade for hover effect */
+    border-color: #7db0e5; /* Darker border on hover */
+}
+
+.btn, .navbar .nav-link {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+
+
+.footer {
+    position: fixed; /* Fixes the footer at the bottom */
+    left: 0; 
+    bottom: 0; 
+    width: 100%; 
+    background-color: #1C1C1C; /* Background color to match navbar */
+    color: #fff; /* Text color */
+    padding: 10px 0; /* Padding for top and bottom */
+    z-index: 1000; /* Ensure it stays above other elements */
+}
+
+.footer a {
+    color: #8ec1ff; /* Link color */
+    text-decoration: none; /* Remove underline */
+}
+
+.footer a:hover {
+    text-decoration: underline; /* Underline on hover */
+}
+
+
+
+/*----------------------    About Page   -------------------------*/
+.custom-header {
+    color: #8ec1ff; /* Set the header color to the desired light blue */
+}
+
+a.text-primary {
+    color: #8ec1ff; /* Set the default color for the email link */
+    text-decoration: none; /* Remove underline from the link */
+}
+
+a.text-primary:hover {
+    color: #3466AA; /* Change to a darker shade on hover */
+    text-decoration: underline; /* Optionally underline on hover */
 }
