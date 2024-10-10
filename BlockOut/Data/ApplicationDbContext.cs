@@ -8,4 +8,6 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
         : base(options)
     {
     }
+
+    // Add other DbSets here if needed
 }

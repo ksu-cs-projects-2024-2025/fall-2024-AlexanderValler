@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;    
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 public class Program
@@ -11,10 +11,11 @@ public class Program
         builder.Services.AddRazorPages();
         builder.Services.AddScoped<Scheduler.SchedulerService>();
 
-
         // Add Entity Framework Core and Identity
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+        // Full Identity setup with roles
         builder.Services.AddIdentity<IdentityUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
@@ -37,7 +38,7 @@ public class Program
 
         app.UseRouting();
 
-        app.UseAuthentication(); // Add this line
+        app.UseAuthentication(); // Ensure this line is present
         app.UseAuthorization();
 
         app.MapRazorPages();

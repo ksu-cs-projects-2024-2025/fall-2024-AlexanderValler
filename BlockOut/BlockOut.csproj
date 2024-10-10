@@ -28,8 +28,4 @@
     <ProjectReference Include="..\Scheduler\Scheduler.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <DotNetCliToolReference Include="dotnet-aspnet-codegenerator" Version="8.0.6-preview.1.24112.3" />
-  </ItemGroup>
-
 </Project>
