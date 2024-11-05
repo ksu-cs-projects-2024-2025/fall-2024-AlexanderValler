@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using BlockOut.Data; // Adjust to the correct namespace if needed
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,21 @@ public class Program
 
         var app = builder.Build();
 
+        // Seed roles and users
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            try
+            {
+                var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+                await SeedData.Initialize(services, userManager);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error seeding data: {ex.Message}");
+            }
+        }
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
@@ -38,7 +54,7 @@ public class Program
 
         app.UseRouting();
 
-        app.UseAuthentication(); // Ensure this line is present
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapRazorPages();

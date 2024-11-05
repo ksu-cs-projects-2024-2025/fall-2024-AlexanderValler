@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34018.315
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockOut", "BlockOut.csproj", "{50F85E59-C8EF-4EE1-8A10-DE0B21FE0D73}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlockOut", "BlockOut.csproj", "{50F85E59-C8EF-4EE1-8A10-DE0B21FE0D73}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scheduler", "..\Scheduler\Scheduler.csproj", "{F2E41C68-9198-470B-883C-4E396A85A322}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scheduler", "..\Scheduler\Scheduler.csproj", "{F2E41C68-9198-470B-883C-4E396A85A322}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,0 +1,12 @@
+﻿@page
+@model BlockOut.Pages.Account.ProfileModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+
+<h2>User Profile</h2>
+
+<div>
+    <p><strong>Name:</strong> @Model.UserName</p>
+    <p><strong>Email:</strong> @Model.Email</p>
+    <!-- Add other user information as needed -->
+</div>

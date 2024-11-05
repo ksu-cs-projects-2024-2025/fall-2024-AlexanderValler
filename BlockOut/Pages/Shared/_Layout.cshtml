@@ -11,7 +11,6 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <!-- Changed to container-fluid for full-width -->
                 <a class="navbar-brand" asp-area="" asp-page="/Index">
                     <img src="~/images/BlockoutLogo_Name.PNG" alt="Logo" style="height: 100px;" />
                 </a>
@@ -30,19 +29,33 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
                         </li>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/Dashboard">Dashboard</a>
+                            </li>
+                        }
+
                     </ul>
+
                     <ul class="navbar-nav">
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item ms-auto">
-                                <form asp-page-handler="Logout" method="post" class="nav-link text-dark" style="border: none; background: none;">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/Account/Profile">
+                                    @User.Identity.Name
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-area="" asp-page="/Account/Logout" method="post" class="nav-link text-dark" style="border: none; background: none;">
                                     <button type="submit" class="btn btn-link" style="color: inherit; padding: 0;">Logout</button>
                                 </form>
                             </li>
                         }
                         else
                         {
-                            <li class="nav-item ms-auto">
+                            <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-page="/Account/Login">Login</a>
                             </li>
                         }

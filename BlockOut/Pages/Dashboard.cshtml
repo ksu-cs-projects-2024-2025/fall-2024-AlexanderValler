@@ -1,0 +1,26 @@
+﻿@page
+@model BlockOut.Pages.Dashboard.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h2>Your Schedule Groups</h2>
+
+<div class="row">
+    @foreach (var groupName in Model.ScheduleGroups)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="~/images/schedule_icon.png" class="card-img-top" alt="Schedule Icon">
+                <div class="card-body">
+                    <h5 class="card-title">@groupName</h5>
+                    <p class="card-text">View and manage schedules for @groupName.</p>
+                    <a asp-page="/Schedules/ViewScheduleGroup" asp-route-groupName="@groupName" class="btn btn-primary">View Group</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Button to create a new schedule -->
+<a asp-page="/Schedules/CreateSchedule" class="btn btn-success mt-4">Create New Schedule</a>
