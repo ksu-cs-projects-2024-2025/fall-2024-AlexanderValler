@@ -22,6 +22,7 @@ namespace BlockOut.Pages.Dashboard
         }
 
         public List<string> ScheduleGroups { get; set; }
+        public List<Business> UserBusinesses { get; set; }
 
         public async Task OnGetAsync()
         {
@@ -32,6 +33,11 @@ namespace BlockOut.Pages.Dashboard
                 .Where(s => s.UserId == user.Id)
                 .Select(s => s.GroupName)
                 .Distinct()
+                .ToList();
+
+            // Retrieve businesses where the logged-in user is a member
+            UserBusinesses = _context.Businesses
+                .Where(b => b.UserId == user.Id)
                 .ToList();
         }
     }

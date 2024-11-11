@@ -1,0 +1,33 @@
+﻿@page "{businessId:int}"
+@model BlockOut.Pages.Creations.BusinessDetailModel
+@{
+    ViewData["Title"] = Model.Business.Name;
+}
+
+<h2>@Model.Business.Name</h2>
+
+<div>
+    <strong>Role:</strong> @Model.Role
+</div>
+
+<div>
+    @if (Model.Role == "Owner")
+    {
+        <p>Welcome, Owner! You have full control over this business.</p>
+        <!-- Display owner-specific actions -->
+        <button class="btn btn-primary">Edit Business</button>
+        <button class="btn btn-danger">Delete Business</button>
+    }
+    else if (Model.Role == "Manager")
+    {
+        <p>Welcome, Manager! You have access to manage the business resources.</p>
+        <!-- Display manager-specific actions -->
+        <button class="btn btn-primary">Manage Resources</button>
+    }
+    else if (Model.Role == "Employee")
+    {
+        <p>Welcome, Employee! You have limited access to this business.</p>
+        <!-- Display employee-specific actions -->
+        <button class="btn btn-secondary">View Resources</button>
+    }
+</div>

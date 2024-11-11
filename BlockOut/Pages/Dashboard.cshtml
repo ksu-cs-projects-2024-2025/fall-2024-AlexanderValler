@@ -4,23 +4,35 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<h2>Your Schedule Groups</h2>
+<h2>Your Businesses</h2>
 
 <div class="row">
-    @foreach (var groupName in Model.ScheduleGroups)
+    @foreach (var business in Model.UserBusinesses)
     {
         <div class="col-md-4 mb-4">
             <div class="card">
-                <img src="~/images/schedule_icon.png" class="card-img-top" alt="Schedule Icon">
                 <div class="card-body">
-                    <h5 class="card-title">@groupName</h5>
-                    <p class="card-text">View and manage schedules for @groupName.</p>
-                    <a asp-page="/Schedules/ViewScheduleGroup" asp-route-groupName="@groupName" class="btn btn-primary">View Group</a>
+                    <h5 class="card-title">@business.Name</h5>
+                    
+                    <p class="card-text">
+                        <!-- Badge to show the user's role in the business -->
+                        <span class="badge bg-primary">@business.Role</span>
+                    </p>
+
+                    <!-- Button to view or manage the business -->
+                    <a href="/Businesses/ViewBusiness?businessId=@business.Id" class="btn btn-primary">Manage</a>
                 </div>
             </div>
         </div>
     }
-</div>
 
-<!-- Button to create a new schedule -->
-<a asp-page="/Schedules/CreateSchedule" class="btn btn-success mt-4">Create New Schedule</a>
+    <!-- Create New Business Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Create New Business</h5>
+                <a href="/Businesses/CreateBusiness" class="btn btn-success">+ Create New Business</a>
+            </div>
+        </div>
+    </div>
+</div>

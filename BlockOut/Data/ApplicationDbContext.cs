@@ -11,4 +11,5 @@ public class ApplicationDbContext : IdentityDbContext
     }
 
     public DbSet<Schedule> Schedules { get; set; } // Registers the Schedule model with the database context
+    public DbSet<Business> Businesses { get; set; } // Register Business model with DbContext
 }
