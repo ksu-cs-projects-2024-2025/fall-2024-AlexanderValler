@@ -1,0 +1,221 @@
+﻿@page
+@model BlockOut.Pages.Creations.TestingModel
+@{
+    ViewData["Title"] = "Testing Schedule Creation";
+}
+
+<h1 class="text-center">Schedule Creation Testing</h1>
+<p class="text-center">This page simulates the schedule creation process with ICS formatting logic.</p>
+
+<div class="container mt-4">
+
+    <!-- Basic Information Input -->
+    <div class="form-group">
+        <label for="schedule-title">Schedule Title</label>
+        <input type="text" id="schedule-title" class="form-control" placeholder="Enter schedule title">
+    </div>
+
+    <div class="form-group">
+        <label for="schedule-description">Schedule Description</label>
+        <textarea id="schedule-description" class="form-control" placeholder="Enter schedule description"></textarea>
+    </div>
+
+    <!-- Schedule Type Selection (Radio Buttons) -->
+    <div class="form-group mt-3">
+        <label>Choose Schedule Type</label>
+        <div class="form-check">
+            <input type="radio" class="form-check-input" name="schedule-type" value="weekly" onclick="toggleCalendarView(this.value)">
+            <label class="form-check-label">Weekly</label>
+        </div>
+        <div class="form-check">
+            <input type="radio" class="form-check-input" name="schedule-type" value="monthly" onclick="toggleCalendarView(this.value)">
+            <label class="form-check-label">Monthly</label>
+        </div>
+    </div>
+
+    <!-- Schedule Length and Repetition -->
+    <div class="form-group mt-3">
+        <label for="schedule-length">Length (in weeks or months)</label>
+        <select id="schedule-length" class="form-control">
+            <!-- Options will be set dynamically based on type -->
+        </select>
+    </div>
+
+    <div class="form-group form-check mt-3">
+        <input type="checkbox" class="form-check-input" id="repeat-check">
+        <label class="form-check-label" for="repeat-check">Repeat Schedule</label>
+    </div>
+
+    <div class="form-group mt-3 d-none" id="repeat-options">
+        <label for="repeat-length">Number of repetitions (max allowed)</label>
+        <input type="number" id="repeat-length" class="form-control" min="1" placeholder="Enter number of repetitions">
+    </div>
+
+    <!-- Import Buttons -->
+    <div class="d-flex justify-content-start mt-4">
+        <button type="button" class="btn btn-secondary me-3" onclick="importEmployeeAvailability()">Import Employee Availability</button>
+        <button type="button" class="btn btn-secondary me-3" onclick="importBusinessEvents()">Import Business Events</button>
+        <button type="button" class="btn btn-secondary" onclick="importICSFile()">Import ICS</button>
+    </div>
+
+    <!-- Coloring Options -->
+    <div class="form-group mt-3">
+        <label>Color Coding</label>
+        <div class="form-check">
+            <input type="radio" class="form-check-input" name="color-option" value="employee" checked>
+            <label class="form-check-label">Color by Employee</label>
+        </div>
+        <div class="form-check">
+            <input type="radio" class="form-check-input" name="color-option" value="position">
+            <label class="form-check-label">Color by Position</label>
+        </div>
+    </div>
+
+    <!-- Calendar Preview (initially hidden) -->
+    <div id="calendar-container" class="mt-5 d-none">
+        <h3>Preview Calendar</h3>
+        <div id="calendar-preview" class="border p-3"></div>
+        <button type="button" class="btn btn-primary mt-3" onclick="generateSchedules()">Generate Schedule</button>
+    </div>
+
+    <!-- Event Popup for Adding/Editing Events -->
+    <div id="event-popup" class="d-none position-absolute p-3 bg-light border rounded">
+        <h5 class="mb-2">Event Details</h5>
+        <form id="event-form">
+            <div class="form-group">
+                <label for="event-title">Event Name</label>
+                <input type="text" id="event-title" class="form-control" placeholder="Enter event name">
+            </div>
+            <div class="form-group mt-2">
+                <label for="event-date">Date</label>
+                <input type="date" id="event-date" class="form-control">
+            </div>
+            <div class="form-group mt-2">
+                <label for="event-start-time">Start Time</label>
+                <input type="time" id="event-start-time" class="form-control">
+            </div>
+            <div class="form-group mt-2">
+                <label for="event-end-time">End Time</label>
+                <input type="time" id="event-end-time" class="form-control">
+            </div>
+            <button type="button" class="btn btn-primary mt-3" onclick="saveEvent()">Save</button>
+            <button type="button" class="btn btn-secondary mt-3" onclick="closePopup()">Cancel</button>
+        </form>
+    </div>
+
+    <!-- Generated Schedules Section -->
+    <div id="generated-schedules" class="mt-5">
+        <h3>Generated Schedules</h3>
+        <p class="text-muted">Up to three generated schedules based on input. Shows visual analytics if in weekly mode.</p>
+    </div>
+
+    <!-- Confirmation of Final Selection -->
+    <div class="mt-5">
+        <h3>Select Final Schedule</h3>
+        <p class="text-muted">Select your preferred schedule and confirm to add it to the business calendar.</p>
+        <button type="button" class="btn btn-success" onclick="confirmSchedule()">Confirm Selection</button>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/ical.js/build/ical.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let calendar, currentEvent;
+            const calendarEl = document.getElementById("calendar-preview");
+            const popup = document.getElementById("event-popup");
+
+            function initCalendar(viewType) {
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: viewType === "weekly" ? "timeGridWeek" : "dayGridMonth",
+                    editable: true,
+                    selectable: true,
+                    dateClick: function (info) {
+                        openPopup(info.dateStr, info.jsEvent.clientX, info.jsEvent.clientY, info.dateStr, info.date.toISOString().substring(11, 16));
+                    },
+                    eventClick: function (info) {
+                        currentEvent = info.event;
+                        const startTime = info.event.start ? info.event.start.toISOString().substring(11, 16) : "";
+                        const endTime = info.event.end ? info.event.end.toISOString().substring(11, 16) : "";
+                        openPopup(info.event.startStr, info.jsEvent.clientX, info.jsEvent.clientY, info.event.startStr, startTime, endTime);
+                    }
+                });
+                calendar.render();
+            }
+
+            // Show or Hide calendar and initialize it based on selection
+            window.toggleCalendarView = function (type) {
+                const calendarContainer = document.getElementById("calendar-container");
+                calendarContainer.classList.remove("d-none");
+                initCalendar(type);
+                toggleScheduleLengthOptions(type);
+            };
+
+            // Populate length options dynamically
+            window.toggleScheduleLengthOptions = function (type) {
+                const lengthSelect = document.getElementById("schedule-length");
+                lengthSelect.innerHTML = "";
+
+                const options = type === "weekly" ? [1, 2, 3] : [1, 2, 3, 4];
+                options.forEach(value => {
+                    const option = document.createElement("option");
+                    option.value = value;
+                    option.textContent = `${value} ${type === "weekly" ? "Week" : "Month"}${value > 1 ? "s" : ""}`;
+                    lengthSelect.appendChild(option);
+                });
+            };
+
+            // Open Popup for adding/editing events
+            function openPopup(date, x, y, defaultDate = "", startTime = "", endTime = "") {
+                popup.style.left = `${x}px`;
+                popup.style.top = `${y}px`;
+                document.getElementById("event-date").value = defaultDate || date;
+                document.getElementById("event-start-time").value = startTime;
+                document.getElementById("event-end-time").value = endTime;
+                document.getElementById("event-title").value = currentEvent ? currentEvent.title : "";
+                popup.classList.remove("d-none");
+            }
+
+            // Save or Update Event in Calendar
+            window.saveEvent = function () {
+                const title = document.getElementById("event-title").value;
+                const date = document.getElementById("event-date").value;
+                const startTime = document.getElementById("event-start-time").value;
+                const endTime = document.getElementById("event-end-time").value;
+
+                const eventStart = new Date(`${date}T${startTime}:00`);
+                const eventEnd = endTime ? new Date(`${date}T${endTime}:00`) : null;
+
+                if (currentEvent) {
+                    currentEvent.setProp("title", title);
+                    currentEvent.setStart(eventStart);
+                    currentEvent.setEnd(eventEnd);
+                } else {
+                    calendar.addEvent({
+                        title: title,
+                        start: eventStart,
+                        end: eventEnd,
+                        allDay: !startTime // Make it an all-day event if no time is set
+                    });
+                }
+                closePopup();
+            };
+
+            // Close Popup
+            window.closePopup = function () {
+                popup.classList.add("d-none");
+                currentEvent = null;
+                document.getElementById("event-form").reset();
+            };
+        });
+    </script>
+}
+
+<!-- Styling for Event Popup -->
+<style>
+    #event-popup {
+        width: 250px;
+        z-index: 1000;
+    }
+</style>

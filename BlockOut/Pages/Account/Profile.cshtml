@@ -1,12 +1,256 @@
 ﻿@page
 @model BlockOut.Pages.Account.ProfileModel
 @using Microsoft.AspNetCore.Identity
-@inject UserManager<IdentityUser> UserManager
+@using BlockOut.Models
+@inject UserManager<ApplicationUser> UserManager
 
-<h2>User Profile</h2>
+@{
+    ViewData["Title"] = "Account";
+}
 
-<div>
-    <p><strong>Name:</strong> @Model.UserName</p>
-    <p><strong>Email:</strong> @Model.Email</p>
-    <!-- Add other user information as needed -->
+<div class="container mt-5">
+    <form method="post" asp-page-handler="UpdateProfilePicture">
+        @Html.AntiForgeryToken()
+
+        <!-- Header with Account Information and Delete Account link -->
+        <div class="row">
+            <div class="col-md-8">
+                <h2 class="border-bottom pb-2" style="color: #4b4b4b;">Account Information</h2>
+            </div>
+            <div class="col-md-4 text-end d-none d-md-block">
+                <a href="/Account/DeleteAccount" class="text-danger text-decoration-none" role="button" style="font-size: 0.9em;">Delete Account</a>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <!-- Profile Icon on the Left with Clickable Popup -->
+            <div class="col-md-3 position-relative">
+                <img id="profile-icon" src="~/images/@(Model.ProfilePictureId).png" alt="User Avatar" class="img-fluid profile-icon"
+                     style="cursor: pointer;" onclick="toggleProfilePopup()">
+
+                <!-- Profile Selection Popup -->
+                <div id="profile-popup" class="profile-popup d-none">
+                    <div class="d-flex flex-wrap">
+                        @for (int i = 1; i <= 6; i++)
+                        {
+                            <img src="~/images/@(i).png" alt="Profile Option @i" class="profile-option" id="option-@i"
+                                 onclick="selectProfilePicture(@i)">
+                        }
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm mt-2" onclick="saveProfilePicture()">Save</button>
+                </div>
+            </div>
+
+            <!-- User Information and Change Buttons with Extra Padding -->
+            <div class="col-md-9 offset-md-1" style="padding-top: 40px;">
+                <!-- Name Field with Editable Mode -->
+                <div class="mb-3 d-flex align-items-center" style="padding-top: 20px;">
+                    <strong>Name:</strong>
+                    <div id="name-display" class="ms-2">@Model.UserName</div>
+                    <input type="text" id="name-edit" class="form-control ms-2 d-none" value="@Model.UserName" style="width: 300px;" />
+                    <button class="btn btn-primary btn-sm ms-2" id="name-button" onclick="toggleEditMode('name')">Change</button>
+                </div>
+
+                <hr />
+
+                <!-- Email Field with Editable Mode -->
+                <div class="mb-3 d-flex align-items-center">
+                    <strong>Email:</strong>
+                    <div id="email-display" class="ms-2">@Model.Email</div>
+                    <input type="email" id="email-edit" class="form-control ms-2 d-none" value="@Model.Email" style="width: 300px;" />
+                    <button class="btn btn-primary btn-sm ms-2" id="email-button" onclick="toggleEditMode('email')">Change</button>
+                </div>
+
+                <hr />
+
+                <!-- Change Password Section -->
+                <div class="mt-3" id="password-section">
+                    <div id="password-inputs" class="d-none mb-3">
+                        <label for="new-password">Password:</label>
+                        <input type="password" id="new-password" class="form-control mb-2" style="width: 300px;">
+                        <label for="confirm-password">Confirm Password:</label>
+                        <input type="password" id="confirm-password" class="form-control" style="width: 300px;">
+                        <ul id="password-error" class="text-danger mt-2" style="list-style-type: disc; padding-left: 20px;"></ul>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="password-button" onclick="changePassword()">Change Password</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Account link for small screens with extra padding above -->
+        <div class="row d-md-none mt-5">
+            <div class="col text-center" style="padding-top: 60px;">
+                <a href="/Account/DeleteAccount" class="text-danger text-decoration-none" role="button" style="font-size: 0.9em;">Delete Account</a>
+            </div>
+        </div>
+    </form>
 </div>
+
+<script>
+    let selectedProfilePicture = null;
+    let originalSelection = null;
+
+    function toggleProfilePopup() {
+        const popup = document.getElementById("profile-popup");
+        popup.classList.toggle("d-none");
+
+        // Remember original selection
+        originalSelection = selectedProfilePicture;
+
+        // Close popup if clicking outside
+        document.addEventListener("click", closePopupOnOutsideClick);
+    }
+
+    function closePopupOnOutsideClick(event) {
+        const popup = document.getElementById("profile-popup");
+        const profileIcon = document.getElementById("profile-icon");
+
+        if (!popup.contains(event.target) && event.target !== profileIcon) {
+            popup.classList.add("d-none");
+            document.removeEventListener("click", closePopupOnOutsideClick);
+
+            // Reset selection if popup is closed without saving
+            selectedProfilePicture = originalSelection;
+            updateSelectionHighlight();
+        }
+    }
+
+    function selectProfilePicture(option) {
+        selectedProfilePicture = option;
+        updateSelectionHighlight();
+    }
+
+    function updateSelectionHighlight() {
+        document.querySelectorAll(".profile-option").forEach(img => img.classList.remove("selected"));
+        if (selectedProfilePicture) {
+            document.getElementById(`option-${selectedProfilePicture}`).classList.add("selected");
+        }
+    }
+
+    function saveProfilePicture() {
+        if (selectedProfilePicture) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            fetch('/Account/Profile?handler=UpdateProfilePicture', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ profilePictureId: selectedProfilePicture })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById("profile-icon").src = `/images/${selectedProfilePicture}.png`;
+                        location.reload();
+                    } else {
+                        console.error('Failed to update profile picture');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            document.getElementById("profile-popup").classList.add("d-none");
+        }
+    }
+
+    function toggleEditMode(field) {
+        const displayElement = document.getElementById(`${field}-display`);
+        const editElement = document.getElementById(`${field}-edit`);
+        const button = document.getElementById(`${field}-button`);
+
+        if (button.textContent === "Change") {
+            displayElement.classList.add("d-none");
+            editElement.classList.remove("d-none");
+            button.textContent = "Save";
+        } else {
+            const newValue = editElement.value;
+            updateUserInfo(field, newValue).then(() => {
+                displayElement.textContent = newValue;
+                displayElement.classList.remove("d-none");
+                editElement.classList.add("d-none");
+                button.textContent = "Change";
+            });
+        }
+    }
+
+    function changePassword() {
+        const passwordInputs = document.getElementById("password-inputs");
+        const passwordButton = document.getElementById("password-button");
+        const passwordError = document.getElementById("password-error");
+
+        if (passwordButton.textContent === "Change Password") {
+            passwordInputs.classList.remove("d-none");
+            passwordButton.textContent = "Confirm";
+        } else {
+            const newPassword = document.getElementById("new-password").value;
+            const confirmPassword = document.getElementById("confirm-password").value;
+            const errors = [];
+
+            if (newPassword.length < 8) errors.push("Password must be at least 8 characters.");
+            if (!/[A-Z]/.test(newPassword)) errors.push("Password must contain at least one uppercase letter.");
+            if (!/[0-9]/.test(newPassword)) errors.push("Password must contain at least one number.");
+            if (newPassword !== confirmPassword) errors.push("Passwords do not match.");
+
+            passwordError.innerHTML = "";
+            if (errors.length > 0) {
+                errors.forEach(error => {
+                    const li = document.createElement("li");
+                    li.textContent = error;
+                    passwordError.appendChild(li);
+                });
+            } else {
+                updateUserInfo("password", newPassword).then(() => {
+                    passwordError.innerHTML = "";
+                    passwordInputs.classList.add("d-none");
+                    passwordButton.textContent = "Change Password";
+                });
+            }
+        }
+    }
+
+    function updateUserInfo(field, value) {
+        return new Promise((resolve) => {
+            console.log(`Updating ${field} to ${value}`);
+            setTimeout(() => {
+                resolve();
+                location.reload();
+            }, 500);
+        });
+    }
+</script>
+
+<style>
+    .profile-icon {
+        width: 200px;
+        height: 200px;
+        object-fit: contain;
+    }
+
+    .profile-popup {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 200px;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+
+    .profile-option {
+        width: 60px;
+        height: 60px;
+        margin: 5px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        object-fit: contain;
+    }
+
+        .profile-option.selected {
+            border: 2px solid #007bff;
+        }
+
+        .profile-option:hover {
+            border-color: #007bff;
+        }
+</style>

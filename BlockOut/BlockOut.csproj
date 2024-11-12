@@ -4,11 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>18b6470b-1d74-4260-9fb4-25bec52befef</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="wwwroot\images\BlockoutLogo.PNG" />
-    <None Include="wwwroot\favicon.ico" />
+    <None Include="wwwroot\images\favicon.ico" />
     <None Include="wwwroot\images\BlockoutLogo_Name.PNG" />
   </ItemGroup>
 
@@ -22,10 +23,15 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.6" />
+    <PackageReference Include="MySql.EntityFrameworkCore" Version="8.0.8" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Scheduler\Scheduler.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

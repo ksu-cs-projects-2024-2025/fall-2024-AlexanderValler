@@ -1,44 +1,36 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using BlockOut.Models;
+using Microsoft.EntityFrameworkCore;
 using BlockOut.Data;
+using BlockOut.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace BlockOut.Pages.Dashboard
 {
-    [Authorize]
     public class DashboardModel : PageModel
     {
         private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public DashboardModel(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public DashboardModel(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
         }
 
-        public List<string> ScheduleGroups { get; set; }
-        public List<Business> UserBusinesses { get; set; }
+        public List<UserBusinessRole> UserBusinesses { get; set; }
 
         public async Task OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // Retrieve unique schedule groups for this user
-            ScheduleGroups = _context.Schedules
-                .Where(s => s.UserId == user.Id)
-                .Select(s => s.GroupName)
-                .Distinct()
-                .ToList();
-
-            // Retrieve businesses where the logged-in user is a member
-            UserBusinesses = _context.Businesses
-                .Where(b => b.UserId == user.Id)
-                .ToList();
+            // Fetch all businesses the user is part of, including their role
+            UserBusinesses = await _context.UserBusinessRoles
+                .Include(ubr => ubr.Business)
+                .Where(ubr => ubr.UserId == user.Id)
+                .ToListAsync();
         }
     }
 }

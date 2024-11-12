@@ -1,0 +1,39 @@
+﻿@page
+@model BlockOut.Pages.Account.DeleteAccountModel
+@{
+    ViewData["Title"] = "Account Deletion";
+}
+
+<h1 class="text-center">Account Deletion</h1>
+
+<p class="text-center">This action cannot be undone. Deleting your account will permanently remove all your data from our servers. Any businesses where you are the owner will have ownership transferred to a manager, if available. If no managers exist, the businesses will also be deleted.</p>
+
+<div class="text-center mt-4">
+    <label for="confirm-delete">Type "CONFIRM" to enable deletion:</label>
+    <input type="text" id="confirm-delete" class="form-control mx-auto" style="width: 200px; text-transform: uppercase;" oninput="checkConfirmDelete()">
+    <button id="delete-account-button" class="btn btn-danger mt-3" onclick="deleteAccount()" disabled>Delete Account</button>
+</div>
+
+<script>
+    // Enable the delete button only if "CONFIRM" is typed in the textbox
+    function checkConfirmDelete() {
+        const confirmInput = document.getElementById("confirm-delete");
+        const deleteButton = document.getElementById("delete-account-button");
+        deleteButton.disabled = confirmInput.value.trim().toUpperCase() !== "CONFIRM";
+    }
+
+    // Function to handle account deletion
+    function deleteAccount() {
+        // TODO: Replace with actual server call to delete the account
+        fetch('/Account/DeleteAccount', {
+            method: 'POST'
+        }).then(response => {
+            if (response.ok) {
+                // Redirect to homepage after account deletion
+                window.location.href = "/";
+            } else {
+                alert("There was an error deleting your account. Please try again.");
+            }
+        });
+    }
+</script>

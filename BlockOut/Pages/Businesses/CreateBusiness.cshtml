@@ -7,21 +7,40 @@
 <h2>Create New Business</h2>
 
 <form method="post">
+    <!-- Business Name Input with Validation -->
     <div class="form-group">
         <label asp-for="Business.Name">Business Name</label>
         <input asp-for="Business.Name" class="form-control" />
         <span asp-validation-for="Business.Name" class="text-danger"></span>
+        @if (Model.BusinessNameExists)
+        {
+            <span class="text-danger">The business already exists, please contact a manager to join.</span>
+        }
     </div>
 
-    <div class="form-group">
-        <label asp-for="Business.Role">Your Role</label>
-        <select asp-for="Business.Role" class="form-control">
-            <option value="Owner">Owner</option>
-            <option value="Manager">Manager</option>
-            <option value="Employee">Employee</option>
-        </select>
-        <span asp-validation-for="Business.Role" class="text-danger"></span>
-    </div>
+    <!-- User's Role - Automatically set as Owner -->
+    <input type="hidden" asp-for="UserRole" value="Owner" />
 
+    <!-- Open Hours Fields -->
+    <h4>Business Open Hours</h4>
+    <p>Set open and close times for each day.</p>
+
+    @for (int i = 0; i < Model.DaysOfWeek.Length; i++)
+    {
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">@Model.DaysOfWeek[i]</label>
+            <div class="col-sm-4">
+                <label>Open Time</label>
+                <input type="time" asp-for="Business.OpenHours[i].OpenTime" class="form-control" />
+            </div>
+            <div class="col-sm-4">
+                <label>Close Time</label>
+                <input type="time" asp-for="Business.OpenHours[i].CloseTime" class="form-control" />
+            </div>
+        </div>
+    }
+
+    <!-- Submit Button -->
     <button type="submit" class="btn btn-primary">Create Business</button>
 </form>
+

@@ -1,6 +1,8 @@
+using BlockOut.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using BlockOut.Data; // Adjust to the correct namespace if needed
+using BlockOut.Models;
+
 
 public class Program
 {
@@ -12,14 +14,13 @@ public class Program
         builder.Services.AddRazorPages();
         builder.Services.AddScoped<Scheduler.SchedulerService>();
 
-        // Add Entity Framework Core and Identity
+        // Add Entity Framework Core and Identity with ApplicationUser and roles
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        // Full Identity setup with roles
-        builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddDefaultTokenProviders();
+        builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<ApplicationDbContext>();
 
         var app = builder.Build();
 
@@ -29,8 +30,9 @@ public class Program
             var services = scope.ServiceProvider;
             try
             {
-                var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-                await SeedData.Initialize(services, userManager);
+                var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+                await SeedData.Initialize(services, userManager, roleManager);
             }
             catch (Exception ex)
             {
@@ -46,7 +48,7 @@ public class Program
         else
         {
             app.UseExceptionHandler("/Error");
-            app.UseHsts();
+            app.UseHsts();  // Only applies HSTS in non-development mode
         }
 
         app.UseHttpsRedirection();

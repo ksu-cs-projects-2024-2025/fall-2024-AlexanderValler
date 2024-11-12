@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using BlockOut.Models;
 using BlockOut.Data;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlockOut.Pages.Creations
 {
@@ -12,9 +13,9 @@ namespace BlockOut.Pages.Creations
     public class BusinessDetailModel : PageModel
     {
         private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public BusinessDetailModel(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public BusinessDetailModel(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
@@ -26,14 +27,30 @@ namespace BlockOut.Pages.Creations
         public async Task<IActionResult> OnGetAsync(int businessId)
         {
             var user = await _userManager.GetUserAsync(User);
-            Business = await _context.Businesses.FindAsync(businessId);
 
-            if (Business == null || Business.UserId != user.Id)
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            // Fetch the business
+            Business = await _context.Businesses.FindAsync(businessId);
+            if (Business == null)
             {
                 return NotFound();
             }
 
-            Role = Business.Role; // Set the role for use in the page
+            // Check if the user has a role in this business
+            var userBusinessRole = await _context.UserBusinessRoles
+                .FirstOrDefaultAsync(ubr => ubr.BusinessId == businessId && ubr.UserId == user.Id);
+
+            if (userBusinessRole == null)
+            {
+                return Forbid();
+            }
+
+            // Set the user's role for use in the page
+            Role = userBusinessRole.Role;
 
             return Page();
         }

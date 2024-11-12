@@ -1,20 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace BlockOut.Models
 {
     public class Business
     {
-        [Key]
         public int Id { get; set; }
 
         [Required]
-        [MaxLength(100)]
         public string Name { get; set; }
 
-        [Required]
-        public string UserId { get; set; } // Associates the business with a specific user
+        // Collection of OpenHours for each day of the week
+        public List<OpenHours> OpenHours { get; set; } = new List<OpenHours>();
 
-        [Required]
-        public string Role { get; set; } // "Owner", "Manager", or "Employee"
+        // Collection to support many-to-many relationship with ApplicationUser through UserBusinessRole
+        public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
+
+        // One-to-many relationship with Calendar
+        public List<Calendar>? Calendars { get; set; } = new List<Calendar>();
     }
 }
