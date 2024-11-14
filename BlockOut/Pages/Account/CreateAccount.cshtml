@@ -1,4 +1,164 @@
 ﻿@page
 @model BlockOut.Pages.Account.CreateAccountModel
 @{
+    ViewData["Title"] = "Create Account";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center">Create Account</h2>
+    <form method="post" id="createAccountForm">
+        <!-- Name Field -->
+        <div class="form-group mt-4">
+            <label asp-for="Input.Name"></label>
+            <input asp-for="Input.Name" class="form-control" id="nameField" />
+            <span asp-validation-for="Input.Name" class="text-danger"></span>
+        </div>
+
+        <!-- Email Field -->
+        <div class="form-group">
+            <label asp-for="Input.Email"></label>
+            <input asp-for="Input.Email" class="form-control" id="emailField" />
+            <span id="emailFeedback" class="text-danger"></span>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group mt-4">
+            <label asp-for="Input.Password"></label>
+            <input asp-for="Input.Password" type="password" class="form-control" id="passwordField" />
+            <ul class="text-danger mt-2" style="list-style-type: disc; padding-left: 20px;">
+                <li id="lengthRequirement">At least 8 characters</li>
+                <li id="uppercaseRequirement">At least one uppercase letter</li>
+                <li id="lowercaseRequirement">At least one lowercase letter</li>
+                <li id="digitRequirement">At least one digit</li>
+                <li id="specialRequirement">At least one special character</li>
+            </ul>
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="form-group mt-4">
+            <label asp-for="Input.ConfirmPassword"></label>
+            <input asp-for="Input.ConfirmPassword" type="password" class="form-control" id="confirmPasswordField" />
+            <span id="confirmPasswordFeedback" class="text-danger"></span>
+        </div>
+
+        <!-- Create Account Button -->
+        <button id="createAccountButton" type="submit" class="btn btn-primary" disabled>Create Account</button>
+
+        <!-- Already have an account? -->
+        <p class="text-center mt-4">
+            Already have an account? <a asp-page="/Account/Login">Log in</a>
+        </p>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const emailField = document.getElementById('emailField');
+            const passwordField = document.getElementById('passwordField');
+            const confirmPasswordField = document.getElementById('confirmPasswordField');
+            const createAccountButton = document.getElementById('createAccountButton');
+
+            const emailFeedback = document.getElementById('emailFeedback');
+            const passwordRequirements = {
+                length: document.getElementById('lengthRequirement'),
+                uppercase: document.getElementById('uppercaseRequirement'),
+                lowercase: document.getElementById('lowercaseRequirement'),
+                digit: document.getElementById('digitRequirement'),
+                special: document.getElementById('specialRequirement'),
+            };
+
+            let isEmailValid = false;
+            let isPasswordValid = false;
+
+            // Check email validity
+            emailField.addEventListener('blur', async () => {
+                const email = emailField.value.trim();
+                if (!email) {
+                    emailFeedback.textContent = 'Email cannot be empty.';
+                    isEmailValid = false;
+                    toggleSubmitButton();
+                    return;
+                }
+
+                // Validate email format locally
+                if (!/^\S+@@\S+\.\S+$/.test(email)) {
+                    emailFeedback.textContent = 'Please enter a valid email address.';
+                    isEmailValid = false;
+                    toggleSubmitButton();
+                    return;
+                }
+
+                // Send request to backend to check if email is already in use
+                try {
+                    const response = await fetch('/Account/CreateAccount?handler=CheckEmailInUse', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email }),
+                    });
+
+                    const result = await response.json();
+                    if (result.isInUse) {
+                        emailFeedback.textContent = 'This email is already in use.';
+                        isEmailValid = false;
+                    } else {
+                        emailFeedback.textContent = '';
+                        isEmailValid = true;
+                    }
+                } catch (error) {
+                    emailFeedback.textContent = 'An error occurred while checking the email. Please try again.';
+                    console.error(error);
+                    isEmailValid = false;
+                }
+
+                toggleSubmitButton();
+            });
+
+            // Check password validity
+            passwordField.addEventListener('input', () => {
+                const password = passwordField.value;
+                isPasswordValid = true;
+
+                // Check length requirement
+                passwordRequirements.length.style.display = password.length >= 8 ? 'none' : 'list-item';
+                isPasswordValid = isPasswordValid && password.length >= 8;
+
+                // Check uppercase letter requirement
+                passwordRequirements.uppercase.style.display = /[A-Z]/.test(password) ? 'none' : 'list-item';
+                isPasswordValid = isPasswordValid && /[A-Z]/.test(password);
+
+                // Check lowercase letter requirement
+                passwordRequirements.lowercase.style.display = /[a-z]/.test(password) ? 'none' : 'list-item';
+                isPasswordValid = isPasswordValid && /[a-z]/.test(password);
+
+                // Check digit requirement
+                passwordRequirements.digit.style.display = /\d/.test(password) ? 'none' : 'list-item';
+                isPasswordValid = isPasswordValid && /\d/.test(password);
+
+                // Check special character requirement
+                passwordRequirements.special.style.display = /[!@@#$%^&*(),.?":{}|<>]/.test(password) ? 'none' : 'list-item';
+                isPasswordValid = isPasswordValid && /[!@@#$%^&*(),.?":{}|<>]/.test(password);
+
+                toggleSubmitButton();
+            });
+
+            // Confirm password matching
+            confirmPasswordField.addEventListener('input', () => {
+                const confirmFeedback = document.getElementById('confirmPasswordFeedback');
+                if (confirmPasswordField.value === passwordField.value) {
+                    confirmFeedback.textContent = '';
+                } else {
+                    confirmFeedback.textContent = 'Passwords do not match.';
+                }
+
+                toggleSubmitButton();
+            });
+
+            // Enable/disable the create account button
+            function toggleSubmitButton() {
+                createAccountButton.disabled = !(isEmailValid && isPasswordValid && confirmPasswordField.value === passwordField.value);
+            }
+        });
+    </script>
 }
