@@ -103,10 +103,12 @@ namespace BlockOut.Pages.Account
             return new JsonResult(new { isInUse = existingUser != null });
         }
 
+        // Model for email check request
         public class CheckEmailModel
         {
             public string Email { get; set; }
         }
+
 
     }
 }

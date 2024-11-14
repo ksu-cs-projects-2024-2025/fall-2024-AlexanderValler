@@ -73,47 +73,48 @@
             let isPasswordValid = false;
 
             // Check email validity
-            emailField.addEventListener('blur', async () => {
-                const email = emailField.value.trim();
-                if (!email) {
-                    emailFeedback.textContent = 'Email cannot be empty.';
-                    isEmailValid = false;
-                    toggleSubmitButton();
-                    return;
-                }
-
-                // Validate email format locally
-                if (!/^\S+@@\S+\.\S+$/.test(email)) {
-                    emailFeedback.textContent = 'Please enter a valid email address.';
-                    isEmailValid = false;
-                    toggleSubmitButton();
-                    return;
-                }
-
-                // Send request to backend to check if email is already in use
-                try {
-                    const response = await fetch('/Account/CreateAccount?handler=CheckEmailInUse', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email }),
-                    });
-
-                    const result = await response.json();
-                    if (result.isInUse) {
-                        emailFeedback.textContent = 'This email is already in use.';
-                        isEmailValid = false;
-                    } else {
-                        emailFeedback.textContent = '';
-                        isEmailValid = true;
-                    }
-                } catch (error) {
-                    emailFeedback.textContent = 'An error occurred while checking the email. Please try again.';
-                    console.error(error);
-                    isEmailValid = false;
-                }
-
+            emailField.addEventListener("blur", async () => {
+            const email = emailField.value.trim();
+            if (!email) {
+                emailFeedback.textContent = "Email cannot be empty.";
+                isEmailValid = false;
                 toggleSubmitButton();
-            });
+                return;
+            }
+
+            // Validate email format locally
+            if (!/^\S+@@\S+\.\S+$/.test(email)) {
+                emailFeedback.textContent = "Please enter a valid email address.";
+                isEmailValid = false;
+                toggleSubmitButton();
+                return;
+            }
+
+            // Send request to backend to check if email is already in use
+            try {
+                const response = await fetch("/Account/CreateAccount?handler=CheckEmailInUse", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ Email: email }), // Ensure the property matches the server-side model
+                });
+
+                const result = await response.json();
+                if (result.isInUse) {
+                    emailFeedback.textContent = "This email is already in use.";
+                    isEmailValid = false;
+                } else {
+                    emailFeedback.textContent = "";
+                    isEmailValid = true;
+                }
+            } catch (error) {
+                emailFeedback.textContent = "An error occurred while checking the email. Please try again.";
+                console.error("Error:", error);
+                isEmailValid = false;
+            }
+
+            toggleSubmitButton();
+        });
+
 
             // Check password validity
             passwordField.addEventListener('input', () => {
