@@ -11,8 +11,6 @@
     <!-- FullCalendar CSS and JS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
-
-
 </head>
 <body>
     <header>
@@ -43,21 +41,29 @@
                                 <a class="nav-link text-dark" asp-area="" asp-page="/Dashboard">Dashboard</a>
                             </li>
                         }
-
                     </ul>
 
                     <ul class="navbar-nav">
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-page="/Account/Profile">
-                                    @User.Identity.Name
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Account
                                 </a>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-area="" asp-page="/Account/Logout" method="post" class="nav-link text-dark" style="border: none; background: none;">
-                                    <button type="submit" class="btn btn-link" style="color: inherit; padding: 0;">Logout</button>
-                                </form>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+                                    <li>
+                                        <a class="dropdown-item text-dark" asp-area="" asp-page="/Account/Profile">
+                                            @User.Identity.Name
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-dark" href="#" onclick="document.getElementById('logout-form').submit();">
+                                            Logout
+                                        </a>
+                                        <form id="logout-form" asp-area="" asp-page="/Account/Logout" method="post" style="display: none;">
+                                        </form>
+                                    </li>
+                                </ul>
                             </li>
                         }
                         else
@@ -70,7 +76,6 @@
                 </div>
             </div>
         </nav>
-
     </header>
     <div class="container">
         <main role="main" class="pb-3">

@@ -48,6 +48,11 @@ namespace BlockOut.Data
                 .HasForeignKey(ubr => ubr.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Add unique composite index for UserBusinessRole
+            modelBuilder.Entity<UserBusinessRole>()
+                .HasIndex(ubr => new { ubr.UserId, ubr.BusinessId })
+                .IsUnique();
+
             // Configure one-to-many relationship between Business and Calendars
             modelBuilder.Entity<Business>()
                 .HasMany(b => b.Calendars)

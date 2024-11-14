@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlockOut.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241112102928_InitialCreate")]
+    [Migration("20241114120612_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -180,6 +180,9 @@ namespace BlockOut.Migrations
                     b.HasKey("UserId", "BusinessId");
 
                     b.HasIndex("BusinessId");
+
+                    b.HasIndex("UserId", "BusinessId")
+                        .IsUnique();
 
                     b.ToTable("UserBusinessRoles");
                 });

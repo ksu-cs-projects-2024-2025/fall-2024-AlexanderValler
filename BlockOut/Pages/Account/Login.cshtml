@@ -4,32 +4,47 @@
     ViewData["Title"] = "Login";
 }
 
-<h2>Login</h2>
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="card p-4 shadow-sm" style="width: 400px;">
+        <h2 class="text-center mb-4">Login</h2>
 
-<form method="post">
-    <div class="form-group">
-        <label asp-for="Email">Email</label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
+        <form method="post">
+            <div class="form-group">
+                <label asp-for="Email">Email</label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
 
-    <div class="form-group">
-        <label asp-for="Password">Password</label>
-        <input asp-for="Password" type="password" class="form-control" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
+            <div class="form-group mt-3">
+                <label asp-for="Password">Password</label>
+                <input asp-for="Password" type="password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
 
-    <div class="form-group mt-3">
-        <button type="submit" class="btn btn-primary">Log In</button>
-    </div>
+            <!-- Reset Password Link -->
+            <div class="form-group mt-2 text-center">
+                <a asp-page="/Account/ResetPassword" class="text-decoration-underline" style="cursor: pointer;">Reset Password</a>
+            </div>
 
-    <div>
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <p class="text-danger">@Model.ErrorMessage</p>
-        }
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary w-100">Log In</button>
+            </div>
+
+            <div>
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <p class="text-danger text-center mt-2">@Model.ErrorMessage</p>
+                }
+            </div>
+        </form>
+
+        <!-- Create Account Section -->
+        <div class="mt-4 text-center">
+            <p class="mb-2">Don't have an account?</p>
+            <a asp-page="/Account/CreateAccount" class="btn btn-secondary w-100">Create Account</a>
+        </div>
     </div>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

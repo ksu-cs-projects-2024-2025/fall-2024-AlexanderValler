@@ -335,6 +335,12 @@ namespace BlockOut.Migrations
                 name: "IX_UserBusinessRoles_BusinessId",
                 table: "UserBusinessRoles",
                 column: "BusinessId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserBusinessRoles_UserId_BusinessId",
+                table: "UserBusinessRoles",
+                columns: new[] { "UserId", "BusinessId" },
+                unique: true);
         }
 
         /// <inheritdoc />

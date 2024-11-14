@@ -178,6 +178,9 @@ namespace BlockOut.Migrations
 
                     b.HasIndex("BusinessId");
 
+                    b.HasIndex("UserId", "BusinessId")
+                        .IsUnique();
+
                     b.ToTable("UserBusinessRoles");
                 });
 
