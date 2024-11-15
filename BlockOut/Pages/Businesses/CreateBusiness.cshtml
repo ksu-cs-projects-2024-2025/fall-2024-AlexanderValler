@@ -6,8 +6,9 @@
 
 <h2>Create New Business</h2>
 
-<form method="post" oninput="checkFormValidity()">
+<form method="post" oninput="checkFormValidity()" id="create-business-form">
     <!-- Business Name Input with Validation -->
+    @Html.AntiForgeryToken()
     <div class="form-group">
         <label asp-for="Business.Name">Business Name</label>
         <input asp-for="Business.Name" id="business-name" class="form-control" onblur="checkBusinessName()" />
@@ -67,9 +68,14 @@
             return;
         }
 
-        // Call the server to validate the business name
         fetch(`/Businesses/CreateBusiness?handler=ValidateBusinessName&name=${encodeURIComponent(nameValue)}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Failed to validate business name.");
+                    return { conflict: false }; // Default to no conflict
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.conflict) {
                     errorSpan.textContent = "The business name is already taken.";

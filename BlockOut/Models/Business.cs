@@ -1,10 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using BlockOut.Data;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace BlockOut.Models
 {
     public class Business
     {
+
+        // Default constructor
+        public Business()
+        {
+            OpenHours = new List<OpenHours>();
+            UserBusinessRoles = new List<UserBusinessRole>();
+            Calendars = new List<Calendar>();
+        }
+
+
         public string Id { get; set; }
 
         [Required]
@@ -18,5 +30,6 @@ namespace BlockOut.Models
 
         // One-to-many relationship with Calendar
         public List<Calendar>? Calendars { get; set; } = new List<Calendar>();
+
     }
 }

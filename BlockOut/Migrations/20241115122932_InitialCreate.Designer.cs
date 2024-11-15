@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlockOut.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241115105949_InitialCreate")]
+    [Migration("20241115122932_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

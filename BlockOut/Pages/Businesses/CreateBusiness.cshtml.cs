@@ -55,10 +55,26 @@ namespace BlockOut.Pages.Businesses
 
         public async Task<IActionResult> OnPostAsync()
         {
+            Console.WriteLine("OnPostAsync triggered"); // Debugging output
             if (!ModelState.IsValid)
             {
+                Console.WriteLine("ModelState is invalid.");
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    Console.WriteLine($"Error: {error.ErrorMessage}");
+                }
                 return Page();
             }
+            Console.WriteLine("ModelState is valid. Proceeding with business creation...");
+
+            string generatedId;
+            do
+            {
+                generatedId = GenerateUniqueBusinessId();
+            } while (_context.Businesses.Any(b => b.Id == generatedId));
+
+            Console.WriteLine($"Generated unique ID: {generatedId}");
+            Business.Id = generatedId;
 
             string normalizedBusinessName = NormalizeBusinessName(Business.Name);
 
@@ -71,10 +87,19 @@ namespace BlockOut.Pages.Businesses
                 return Page();
             }
 
-            // Remove any disabled days from OpenHours
-            Business.OpenHours = Business.OpenHours.Where(oh => oh.OpenTime != TimeSpan.Zero || oh.CloseTime != TimeSpan.Zero).ToList();
+            // Remove disabled days (OpenTime and CloseTime as TimeSpan.Zero indicate closed)
+            Business.OpenHours = Business.OpenHours
+                .Where(oh => oh.OpenTime != TimeSpan.Zero || oh.CloseTime != TimeSpan.Zero)
+                .ToList();
 
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                Console.WriteLine("User is null. Cannot proceed with business creation.");
+                return RedirectToPage("/Index");
+            }
+
+            Console.WriteLine("Associating business with user...");
             Business.UserBusinessRoles.Add(new UserBusinessRole
             {
                 UserId = user.Id,
@@ -82,8 +107,18 @@ namespace BlockOut.Pages.Businesses
                 Role = "Owner"
             });
 
-            _context.Businesses.Add(Business);
-            await _context.SaveChangesAsync();
+            try
+            {
+                Console.WriteLine("Saving business to the database...");
+                _context.Businesses.Add(Business);
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Business created successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving business: {ex.Message}");
+                return Page();
+            }
 
             return RedirectToPage("/Businesses/Index");
         }
@@ -139,6 +174,14 @@ namespace BlockOut.Pages.Businesses
             }
 
             return dp[s.Length, t.Length];
+        }
+
+        //create the unique ID
+        private string GenerateUniqueBusinessId()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, 8)
+                .Select(s => s[new Random().Next(s.Length)]).ToArray());
         }
     }
 }

@@ -35,7 +35,7 @@ namespace BlockOut.Data
                 {
                     business = new Business
                     {
-                        Id = Guid.NewGuid().ToString(), // Generate a unique string ID
+                        Id = GenerateUniqueBusinessId(context),
                         Name = "Test Business",
                         OpenHours = new List<OpenHours>
                         {
@@ -62,6 +62,20 @@ namespace BlockOut.Data
                 await AssignBusinessRole(context, managerUser, business, "Manager");
                 await AssignBusinessRole(context, employeeUser, business, "Employee");
             }
+        }
+
+
+        // Helper to generate unique 8-character business IDs
+        private static string GenerateUniqueBusinessId(ApplicationDbContext context)
+        {
+            string id;
+            do
+            {
+                id = Guid.NewGuid().ToString("N").Substring(0, 8);
+            }
+            while (context.Businesses.Any(b => b.Id == id));
+
+            return id;
         }
 
         private static async Task<ApplicationUser> CreateUserIfNotExists(UserManager<ApplicationUser> userManager, string userName, string email, string password, int profilePictureId, string jobTitle)
