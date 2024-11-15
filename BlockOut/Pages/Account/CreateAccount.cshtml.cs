@@ -91,7 +91,6 @@ namespace BlockOut.Pages.Account
         }
 
 
-        [HttpPost]
         public async Task<IActionResult> OnPostCheckEmailInUseAsync([FromBody] CheckEmailModel model)
         {
             if (string.IsNullOrEmpty(model?.Email))
@@ -112,4 +111,3 @@ namespace BlockOut.Pages.Account
 
     }
 }
-

@@ -7,6 +7,7 @@
 <div class="container mt-5">
     <h2 class="text-center">Create Account</h2>
     <form method="post" id="createAccountForm">
+        @Html.AntiForgeryToken()
         <!-- Name Field -->
         <div class="form-group mt-4">
             <label asp-for="Input.Name"></label>
@@ -59,7 +60,6 @@
             const passwordField = document.getElementById('passwordField');
             const confirmPasswordField = document.getElementById('confirmPasswordField');
             const createAccountButton = document.getElementById('createAccountButton');
-
             const emailFeedback = document.getElementById('emailFeedback');
             const passwordRequirements = {
                 length: document.getElementById('lengthRequirement'),
@@ -92,10 +92,16 @@
 
             // Send request to backend to check if email is already in use
             try {
+                // Retrieve the antiforgery token from the form
+                const token = document.querySelector("input[name='__RequestVerificationToken']").value;
+
                 const response = await fetch("/Account/CreateAccount?handler=CheckEmailInUse", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ Email: email }), // Ensure the property matches the server-side model
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": token // Include the token in the header
+                    },
+                    body: JSON.stringify({ Email: email })
                 });
 
                 const result = await response.json();
