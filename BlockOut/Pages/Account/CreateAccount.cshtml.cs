@@ -70,7 +70,7 @@ namespace BlockOut.Pages.Account
             // Create the new user
             var newUser = new ApplicationUser
             {
-                UserName = Input.Email,
+                UserName = Input.Name,
                 Email = Input.Email,
             };
 

@@ -41,46 +41,17 @@
                 </div>
             </div>
 
-            <!-- User Information and Change Buttons with Extra Padding -->
+            <!-- User Information -->
             <div class="col-md-9 offset-md-1" style="padding-top: 40px;">
-                <!-- Name Field with Editable Mode -->
+                <!-- Name Field -->
                 <div class="mb-3 d-flex align-items-center" style="padding-top: 20px;">
                     <strong>Name:</strong>
                     <div id="name-display" class="ms-2">@Model.UserName</div>
                     <input type="text" id="name-edit" class="form-control ms-2 d-none" value="@Model.UserName" style="width: 300px;" />
-                    <button class="btn btn-primary btn-sm ms-2" id="name-button" onclick="toggleEditMode('name')">Change</button>
+                    <button class="btn btn-primary btn-sm ms-2" id="name-button" onclick="toggleNameEdit(event)">Change</button>
                 </div>
 
                 <hr />
-
-                <!-- Email Field with Editable Mode -->
-                <div class="mb-3 d-flex align-items-center">
-                    <strong>Email:</strong>
-                    <div id="email-display" class="ms-2">@Model.Email</div>
-                    <input type="email" id="email-edit" class="form-control ms-2 d-none" value="@Model.Email" style="width: 300px;" />
-                    <button class="btn btn-primary btn-sm ms-2" id="email-button" onclick="toggleEditMode('email')">Change</button>
-                </div>
-
-                <hr />
-
-                <!-- Change Password Section -->
-                <div class="mt-3" id="password-section">
-                    <div id="password-inputs" class="d-none mb-3">
-                        <label for="new-password">Password:</label>
-                        <input type="password" id="new-password" class="form-control mb-2" style="width: 300px;">
-                        <label for="confirm-password">Confirm Password:</label>
-                        <input type="password" id="confirm-password" class="form-control" style="width: 300px;">
-                        <ul id="password-error" class="text-danger mt-2" style="list-style-type: disc; padding-left: 20px;"></ul>
-                    </div>
-                    <button class="btn btn-primary btn-sm" id="password-button" onclick="changePassword()">Change Password</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Delete Account link for small screens with extra padding above -->
-        <div class="row d-md-none mt-5">
-            <div class="col text-center" style="padding-top: 60px;">
-                <a href="/Account/DeleteAccount" class="text-danger text-decoration-none" role="button" style="font-size: 0.9em;">Delete Account</a>
             </div>
         </div>
     </form>
@@ -127,94 +98,87 @@
         }
     }
 
+    //function to save profile picture changes
     function saveProfilePicture() {
-        if (selectedProfilePicture) {
+        const popup = document.getElementById("profile-popup");
+
+        if (!selectedProfilePicture) {
+            // Close the popup without doing anything if no profile picture is selected
+            popup.classList.add("d-none");
+            return;
+        }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        fetch('/Account/Profile?handler=UpdateProfilePicture', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            },
+            body: JSON.stringify({ profilePictureId: selectedProfilePicture })
+        })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById("profile-icon").src = `/images/${selectedProfilePicture}.png`;
+                    location.reload(); // Refresh the page after success
+                } else {
+                    console.error('Failed to update profile picture');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+
+        popup.classList.add("d-none"); // Close the popup regardless
+    }
+
+
+
+    // Toggle editing mode for name
+    function toggleNameEdit(event) {
+        event.preventDefault();
+        const nameDisplay = document.getElementById("name-display");
+        const nameEdit = document.getElementById("name-edit");
+        const nameButton = document.getElementById("name-button");
+        const navbarName = document.getElementById("navbar-user-name"); // Target the navbar name element
+
+        if (nameButton.textContent === "Change") {
+            nameDisplay.classList.add("d-none");
+            nameEdit.classList.remove("d-none");
+            nameButton.textContent = "Confirm";
+        } else {
+            const newName = nameEdit.value.trim();
+
+            if (newName.length < 2) {
+                alert("Name must be at least 2 characters long.");
+                return;
+            }
+
+            // Send the updated name to the server
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-            fetch('/Account/Profile?handler=UpdateProfilePicture', {
+
+            fetch('/Account/Profile?handler=UpdateName', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': token
                 },
-                body: JSON.stringify({ profilePictureId: selectedProfilePicture })
+                body: JSON.stringify({ name: newName })
             })
-                .then(response => {
-                    if (response.ok) {
-                        document.getElementById("profile-icon").src = `/images/${selectedProfilePicture}.png`;
-                        location.reload();
-                    } else {
-                        console.error('Failed to update profile picture');
+            .then(response => {
+                if (response.ok) {
+                    // Update the navbar name dynamically
+                    if (navbarName) {
+                        navbarName.textContent = newName;
                     }
-                })
-                .catch(error => console.error('Error:', error));
-            document.getElementById("profile-popup").classList.add("d-none");
+
+                    location.reload(); // refresh the page to reload all elements
+                } else {
+                    alert("Failed to update name.");
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
     }
 
-    function toggleEditMode(field) {
-        const displayElement = document.getElementById(`${field}-display`);
-        const editElement = document.getElementById(`${field}-edit`);
-        const button = document.getElementById(`${field}-button`);
-
-        if (button.textContent === "Change") {
-            displayElement.classList.add("d-none");
-            editElement.classList.remove("d-none");
-            button.textContent = "Save";
-        } else {
-            const newValue = editElement.value;
-            updateUserInfo(field, newValue).then(() => {
-                displayElement.textContent = newValue;
-                displayElement.classList.remove("d-none");
-                editElement.classList.add("d-none");
-                button.textContent = "Change";
-            });
-        }
-    }
-
-    function changePassword() {
-        const passwordInputs = document.getElementById("password-inputs");
-        const passwordButton = document.getElementById("password-button");
-        const passwordError = document.getElementById("password-error");
-
-        if (passwordButton.textContent === "Change Password") {
-            passwordInputs.classList.remove("d-none");
-            passwordButton.textContent = "Confirm";
-        } else {
-            const newPassword = document.getElementById("new-password").value;
-            const confirmPassword = document.getElementById("confirm-password").value;
-            const errors = [];
-
-            if (newPassword.length < 8) errors.push("Password must be at least 8 characters.");
-            if (!/[A-Z]/.test(newPassword)) errors.push("Password must contain at least one uppercase letter.");
-            if (!/[0-9]/.test(newPassword)) errors.push("Password must contain at least one number.");
-            if (newPassword !== confirmPassword) errors.push("Passwords do not match.");
-
-            passwordError.innerHTML = "";
-            if (errors.length > 0) {
-                errors.forEach(error => {
-                    const li = document.createElement("li");
-                    li.textContent = error;
-                    passwordError.appendChild(li);
-                });
-            } else {
-                updateUserInfo("password", newPassword).then(() => {
-                    passwordError.innerHTML = "";
-                    passwordInputs.classList.add("d-none");
-                    passwordButton.textContent = "Change Password";
-                });
-            }
-        }
-    }
-
-    function updateUserInfo(field, value) {
-        return new Promise((resolve) => {
-            console.log(`Updating ${field} to ${value}`);
-            setTimeout(() => {
-                resolve();
-                location.reload();
-            }, 500);
-        });
-    }
 </script>
 
 <style>
@@ -246,11 +210,11 @@
         object-fit: contain;
     }
 
-        .profile-option.selected {
-            border: 2px solid #007bff;
-        }
+    .profile-option.selected {
+        border: 2px solid #007bff;
+    }
 
-        .profile-option:hover {
-            border-color: #007bff;
-        }
+    .profile-option:hover {
+        border-color: #007bff;
+    }
 </style>

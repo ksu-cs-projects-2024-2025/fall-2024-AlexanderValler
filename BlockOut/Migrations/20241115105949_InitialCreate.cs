@@ -56,8 +56,7 @@ namespace BlockOut.Migrations
                 name: "Businesses",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -199,7 +198,7 @@ namespace BlockOut.Migrations
                     Data = table.Column<string>(type: "TEXT", nullable: true),
                     AvailabilityUserId = table.Column<string>(type: "TEXT", nullable: true),
                     PreferencesUserId = table.Column<string>(type: "TEXT", nullable: true),
-                    BusinessId = table.Column<int>(type: "INTEGER", nullable: true)
+                    BusinessId = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -233,7 +232,7 @@ namespace BlockOut.Migrations
                     Day = table.Column<string>(type: "TEXT", nullable: false),
                     OpenTime = table.Column<TimeSpan>(type: "TEXT", nullable: false),
                     CloseTime = table.Column<TimeSpan>(type: "TEXT", nullable: false),
-                    BusinessId = table.Column<int>(type: "INTEGER", nullable: false)
+                    BusinessId = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -251,7 +250,7 @@ namespace BlockOut.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    BusinessId = table.Column<int>(type: "INTEGER", nullable: false),
+                    BusinessId = table.Column<string>(type: "TEXT", nullable: false),
                     Id = table.Column<int>(type: "INTEGER", nullable: false),
                     Role = table.Column<string>(type: "TEXT", nullable: false)
                 },

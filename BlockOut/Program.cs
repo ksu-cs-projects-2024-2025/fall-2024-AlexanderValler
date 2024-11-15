@@ -21,6 +21,13 @@ public class Program
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
+        // Configure the application cookie to redirect unauthenticated users
+        builder.Services.ConfigureApplicationCookie(options =>
+        {
+            options.LoginPath = "/"; // Redirect to the homepage if the user is not logged in
+            options.AccessDeniedPath = "/"; // Redirect to the homepage if access is denied
+        });
+
         var app = builder.Build();
 
         // Apply migrations and seed data

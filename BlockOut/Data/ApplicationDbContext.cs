@@ -66,6 +66,13 @@ namespace BlockOut.Data
                 .WithOne(oh => oh.Business)
                 .HasForeignKey(oh => oh.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure the relationship between Calendar and Business
+            modelBuilder.Entity<Calendar>()
+                .HasOne(c => c.Business)
+                .WithMany(b => b.Calendars)
+                .HasForeignKey(c => c.BusinessId)
+                .OnDelete(DeleteBehavior.Cascade); // Optional: Set cascading delete
         }
     }
 }

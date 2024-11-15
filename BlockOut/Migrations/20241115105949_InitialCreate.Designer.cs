@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlockOut.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241114120612_InitialCreate")]
+    [Migration("20241115105949_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -92,9 +92,8 @@ namespace BlockOut.Migrations
 
             modelBuilder.Entity("BlockOut.Models.Business", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -111,8 +110,9 @@ namespace BlockOut.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("BusinessId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("BusinessId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<TimeSpan>("CloseTime")
                         .HasColumnType("TEXT");
@@ -167,8 +167,8 @@ namespace BlockOut.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("BusinessId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("BusinessId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
@@ -196,8 +196,8 @@ namespace BlockOut.Migrations
                     b.Property<string>("AvailabilityUserId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("BusinessId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("BusinessId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");

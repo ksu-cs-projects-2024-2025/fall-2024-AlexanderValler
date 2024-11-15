@@ -6,16 +6,13 @@
 
 <h2>Create New Business</h2>
 
-<form method="post">
+<form method="post" oninput="checkFormValidity()">
     <!-- Business Name Input with Validation -->
     <div class="form-group">
         <label asp-for="Business.Name">Business Name</label>
-        <input asp-for="Business.Name" class="form-control" />
+        <input asp-for="Business.Name" id="business-name" class="form-control" onblur="checkBusinessName()" />
         <span asp-validation-for="Business.Name" class="text-danger"></span>
-        @if (Model.BusinessNameExists)
-        {
-            <span class="text-danger">The business already exists, please contact a manager to join.</span>
-        }
+        <span id="business-name-error" class="text-danger">@Model.ConflictingBusinessNameMessage</span>
     </div>
 
     <!-- User's Role - Automatically set as Owner -->
@@ -23,24 +20,75 @@
 
     <!-- Open Hours Fields -->
     <h4>Business Open Hours</h4>
-    <p>Set open and close times for each day.</p>
+    <p>Set open and close times for each day. Toggle off a day if the business is closed.</p>
 
     @for (int i = 0; i < Model.DaysOfWeek.Length; i++)
     {
         <div class="form-group row">
             <label class="col-sm-2 col-form-label">@Model.DaysOfWeek[i]</label>
+            <div class="col-sm-2">
+                <input type="checkbox" id="day-toggle-@i" onchange="toggleDay(@i)" checked />
+                <label for="day-toggle-@i">Open</label>
+            </div>
             <div class="col-sm-4">
                 <label>Open Time</label>
-                <input type="time" asp-for="Business.OpenHours[i].OpenTime" class="form-control" />
+                <input type="time" asp-for="Business.OpenHours[i].OpenTime" class="form-control" id="open-time-@i" />
             </div>
             <div class="col-sm-4">
                 <label>Close Time</label>
-                <input type="time" asp-for="Business.OpenHours[i].CloseTime" class="form-control" />
+                <input type="time" asp-for="Business.OpenHours[i].CloseTime" class="form-control" id="close-time-@i" />
             </div>
         </div>
     }
 
     <!-- Submit Button -->
-    <button type="submit" class="btn btn-primary">Create Business</button>
+    <button type="submit" id="create-business-button" class="btn btn-primary" disabled>Create Business</button>
 </form>
 
+<script>
+    function toggleDay(index) {
+        const openTimeInput = document.getElementById(`open-time-${index}`);
+        const closeTimeInput = document.getElementById(`close-time-${index}`);
+        const isChecked = document.getElementById(`day-toggle-${index}`).checked;
+
+        openTimeInput.disabled = !isChecked;
+        closeTimeInput.disabled = !isChecked;
+    }
+
+    function checkBusinessName() {
+        const businessNameInput = document.getElementById("business-name");
+        const errorSpan = document.getElementById("business-name-error");
+        const createButton = document.getElementById("create-business-button");
+        const nameValue = businessNameInput.value.trim();
+
+        if (nameValue === "") {
+            errorSpan.textContent = "";
+            createButton.disabled = true;
+            return;
+        }
+
+        // Call the server to validate the business name
+        fetch(`/Businesses/CreateBusiness?handler=ValidateBusinessName&name=${encodeURIComponent(nameValue)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.conflict) {
+                    errorSpan.textContent = "The business name is already taken.";
+                    createButton.disabled = true;
+                } else {
+                    errorSpan.textContent = "";
+                    createButton.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error("Error validating business name:", error);
+            });
+    }
+
+    function checkFormValidity() {
+        const nameInput = document.getElementById("business-name").value.trim();
+        const createButton = document.getElementById("create-business-button");
+        const nameError = document.getElementById("business-name-error").textContent;
+
+        createButton.disabled = !nameInput || nameError;
+    }
+</script>

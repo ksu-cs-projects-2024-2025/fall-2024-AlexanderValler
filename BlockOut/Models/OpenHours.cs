@@ -17,7 +17,7 @@ namespace BlockOut.Models
         public TimeSpan CloseTime { get; set; }
 
         // Foreign key to link OpenHours to Business
-        public int BusinessId { get; set; }
+        public string BusinessId { get; set; }
         public Business Business { get; set; }
     }
 }

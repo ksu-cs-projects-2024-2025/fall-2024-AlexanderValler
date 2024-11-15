@@ -1,0 +1,101 @@
+﻿@page
+@model BlockOut.Pages.Account.ResetModel
+@{
+    ViewData["Title"] = "Reset Password";
+}
+
+<div class="container mt-5">
+    <div class="card mx-auto shadow" style="max-width: 400px; padding: 20px; border-radius: 10px;">
+        <h2 class="text-center mb-4">Reset Password</h2>
+        <form method="post" id="resetForm">
+            @Html.AntiForgeryToken()
+            <!-- Email Field -->
+            <div class="form-group">
+                <label asp-for="Input.Email" class="form-label">Enter your email address:</label>
+                <input asp-for="Input.Email" class="form-control" id="emailField" placeholder="youremail@example.com" />
+                <span id="emailFeedback" class="text-danger mt-2"></span>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="text-center mt-4">
+                <button id="resetButton" type="submit" class="btn btn-primary btn-lg w-100" disabled>Send Link</button>
+            </div>
+
+            <!-- Back to Login -->
+            <p class="text-center mt-4">
+                <a asp-page="/Account/Login" class="text-decoration-none">Back to Login</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const emailField = document.getElementById("emailField");
+            const resetButton = document.getElementById("resetButton");
+            const emailFeedback = document.getElementById("emailFeedback");
+
+            let isEmailValid = false;
+
+            // Email validation
+            emailField.addEventListener("blur", async () => {
+                const email = emailField.value.trim();
+                if (!email) {
+                    emailFeedback.textContent = "Email cannot be empty.";
+                    isEmailValid = false;
+                    toggleSubmitButton();
+                    return;
+                }
+
+                // Validate email format
+                if (!/^\S+@@\S+\.\S+$/.test(email)) {
+                    emailFeedback.textContent = "Please enter a valid email address.";
+                    isEmailValid = false;
+                    toggleSubmitButton();
+                    return;
+                }
+
+                // Check if email exists in database
+                try {
+                    const token = document.querySelector("input[name='__RequestVerificationToken']").value;
+                    const response = await fetch("/Account/Reset?handler=CheckEmailExists", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "RequestVerificationToken": token,
+                        },
+                        body: JSON.stringify({ Email: email }),
+                    });
+
+                    const result = await response.json();
+                    if (result.exists) {
+                        emailFeedback.textContent = "";
+                        isEmailValid = true;
+                    } else {
+                        emailFeedback.textContent = "Email does not exist.";
+                        isEmailValid = false;
+                    }
+                } catch (error) {
+                    emailFeedback.textContent = "An error occurred while checking the email. Please try again.";
+                    console.error("Error:", error);
+                    isEmailValid = false;
+                }
+
+                toggleSubmitButton();
+            });
+
+            // Toggle submit button state
+            function toggleSubmitButton() {
+                resetButton.disabled = !isEmailValid;
+            }
+
+            // Change button text to 'Resend Link' after first submission
+            resetButton.addEventListener("click", (event) => {
+                event.preventDefault(); // Prevent actual form submission for now
+                resetButton.textContent = "Resend Link";
+            });
+        });
+    </script>
+}

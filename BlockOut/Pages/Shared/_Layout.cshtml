@@ -53,7 +53,7 @@
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
                                     <li>
                                         <a class="dropdown-item text-dark" asp-area="" asp-page="/Account/Profile">
-                                            @User.Identity.Name
+                                            <span id="navbar-user-name">@User.Identity.Name</span> <!-- Added an id for JavaScript -->
                                         </a>
                                     </li>
                                     <li>
@@ -73,6 +73,7 @@
                             </li>
                         }
                     </ul>
+
                 </div>
             </div>
         </nav>

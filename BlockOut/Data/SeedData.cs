@@ -35,6 +35,7 @@ namespace BlockOut.Data
                 {
                     business = new Business
                     {
+                        Id = Guid.NewGuid().ToString(), // Generate a unique string ID
                         Name = "Test Business",
                         OpenHours = new List<OpenHours>
                         {

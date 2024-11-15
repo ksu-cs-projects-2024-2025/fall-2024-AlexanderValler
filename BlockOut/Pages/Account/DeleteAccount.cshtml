@@ -24,9 +24,13 @@
 
     // Function to handle account deletion
     function deleteAccount() {
-        // TODO: Replace with actual server call to delete the account
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
         fetch('/Account/DeleteAccount', {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': token
+            }
         }).then(response => {
             if (response.ok) {
                 // Redirect to homepage after account deletion
@@ -34,6 +38,6 @@
             } else {
                 alert("There was an error deleting your account. Please try again.");
             }
-        });
+        }).catch(error => console.error('Error:', error));
     }
 </script>

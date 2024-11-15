@@ -15,7 +15,7 @@ public class Calendar
     public ApplicationUser? AvailabilityUser { get; set; }
     public ApplicationUser? PreferencesUser { get; set; }
 
-    public int? BusinessId { get; set; }
+    public string? BusinessId { get; set; }
     public Business? Business { get; set; }
 
 }

@@ -24,7 +24,7 @@ namespace BlockOut.Pages.Creations
         public Business Business { get; set; }
         public string Role { get; set; }
 
-        public async Task<IActionResult> OnGetAsync(int businessId)
+        public async Task<IActionResult> OnGetAsync(string businessId)
         {
             var user = await _userManager.GetUserAsync(User);
 
