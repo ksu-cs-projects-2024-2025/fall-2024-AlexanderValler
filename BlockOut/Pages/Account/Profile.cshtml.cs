@@ -72,7 +72,7 @@ namespace BlockOut.Pages.Account
 
         public class NameUpdateModel
         {
-            public string Name { get; set; }
+            public string? Name { get; set; }
         }
 
 

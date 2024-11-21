@@ -23,7 +23,7 @@ namespace BlockOut.Pages.Account
         {
             [Required]
             [EmailAddress]
-            public string Email { get; set; }
+            public required string Email { get; set; }
         }
 
         public void OnGet()
@@ -65,7 +65,7 @@ namespace BlockOut.Pages.Account
 
         public class CheckEmailModel
         {
-            public string Email { get; set; }
+            public string? Email { get; set; }
         }
     }
 }

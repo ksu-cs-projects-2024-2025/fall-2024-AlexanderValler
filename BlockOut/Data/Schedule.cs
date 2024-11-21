@@ -9,11 +9,11 @@ namespace BlockOut.Models
         public int Id { get; set; }
 
         [Required]
-        public string UserId { get; set; } // Associates the schedule with a specific user
+        public required string UserId { get; set; } // Associates the schedule with a specific user
 
         [Required]
         [MaxLength(100)]
-        public string Title { get; set; } // Title of the schedule
+        public required string Title { get; set; } // Title of the schedule
 
         [Required]
         public DateTime Date { get; set; } // Date of the schedule
@@ -23,6 +23,6 @@ namespace BlockOut.Models
 
         [Required]
         [MaxLength(100)]
-        public string GroupName { get; set; } // Represents the business or schedule group name
+        public required string GroupName { get; set; } // Represents the business or schedule group name
     }
 }

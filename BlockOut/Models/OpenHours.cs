@@ -8,7 +8,7 @@ namespace BlockOut.Models
         public int Id { get; set; }
 
         [Required]
-        public string Day { get; set; } // E.g., "Monday"
+        public required string Day { get; set; } // E.g., "Monday"
 
         [DataType(DataType.Time)]
         public TimeSpan OpenTime { get; set; }
@@ -17,7 +17,7 @@ namespace BlockOut.Models
         public TimeSpan CloseTime { get; set; }
 
         // Foreign key to link OpenHours to Business
-        public string BusinessId { get; set; }
-        public Business Business { get; set; }
+        public string? BusinessId { get; set; }
+        public Business? Business { get; set; }
     }
 }

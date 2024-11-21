@@ -3,7 +3,7 @@
 public class Calendar
 {
     public int Id { get; set; }
-    public string Name { get; set; } // "AvailabilityCalendar" or "PreferencesCalendar"
+    public string? Name { get; set; } // "AvailabilityCalendar" or "PreferencesCalendar"
     public string? Type { get; set; } // Type of calendar, e.g., weekly, monthly
     public string? Data { get; set; } // Placeholder for serialized calendar data
 

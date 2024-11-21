@@ -17,10 +17,9 @@ namespace BlockOut.Models
         }
 
 
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
-        [Required]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         // Collection of OpenHours for each day of the week
         public List<OpenHours> OpenHours { get; set; } = new List<OpenHours>();
