@@ -4,19 +4,22 @@
     ViewData["Title"] = "Business Details";
 }
 
-<h2>@Model.Business.Name</h2>
+<h2 id="business-name-container">
+    @Model.Business.Name
+</h2>
 
-<!-- Edit Business Name (visible only for Owners or Managers) -->
 @if (Model.IsOwnerOrManager)
 {
-    <div class="mb-4">
-        <label for="business-name-input">Business Name:</label>
-        <input type="text" id="business-name-input" class="form-control" value="@Model.Business.Name" />
-        <button class="btn btn-primary mt-2" onclick="updateBusinessName()">Save</button>
-        <span id="update-success" class="text-success d-none">Business name updated successfully!</span>
-        <span id="update-error" class="text-danger d-none">Failed to update business name. Please try again.</span>
-    </div>
+    <button id="edit-business-name-button" class="btn-link text-primary" onclick="toggleEditMode()" style="border: none; background: none;">Edit</button>
 }
+
+<div id="business-name-edit-container" class="d-none">
+    <input type="text" id="business-name-input" class="form-control mb-2" value="@Model.Business.Name" onblur="checkBusinessName()" />
+    <button class="btn btn-link text-dark" onclick="updateBusinessName()">Save</button>
+    <span id="update-success" class="text-success d-none">Business name updated successfully!</span>
+    <span id="update-error" class="text-danger d-none">Failed to update business name. Please try again.</span>
+    <span id="business-name-error" class="text-danger d-none">Business name is too similar to an existing name.</span>
+</div>
 
 <!-- Sidebar with user roles -->
 <div class="row">
@@ -28,7 +31,10 @@
                 <ul>
                     @foreach (var userRole in Model.UserBusinessRoles.Where(ubr => ubr.Role == "Owner"))
                     {
-                        <li>@userRole.User.UserName</li>
+                        <li>
+                            <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                            @userRole.User.UserName
+                        </li>
                     }
                 </ul>
             </li>
@@ -37,7 +43,10 @@
                 <ul>
                     @foreach (var userRole in Model.UserBusinessRoles.Where(ubr => ubr.Role == "Manager"))
                     {
-                        <li>@userRole.User.UserName</li>
+                        <li>
+                            <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                            @userRole.User.UserName
+                        </li>
                     }
                 </ul>
             </li>
@@ -46,7 +55,10 @@
                 <ul>
                     @foreach (var userRole in Model.UserBusinessRoles.Where(ubr => ubr.Role == "Employee"))
                     {
-                        <li>@userRole.User.UserName</li>
+                        <li>
+                            <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                            @userRole.User.UserName
+                        </li>
                     }
                 </ul>
             </li>
@@ -65,34 +77,92 @@
 </div>
 
 <script>
+    function toggleEditMode() {
+        const nameContainer = document.getElementById("business-name-container");
+        const editContainer = document.getElementById("business-name-edit-container");
+        const editButton = document.getElementById("edit-business-name-button");
+
+        nameContainer.classList.toggle("d-none");
+        editContainer.classList.toggle("d-none");
+        editButton.classList.toggle("d-none");
+    }
+
+    function checkBusinessName() {
+        const businessNameInput = document.getElementById("business-name-input").value.trim();
+        const nameError = document.getElementById("business-name-error");
+
+        nameError.classList.add("d-none");
+
+        if (!businessNameInput) {
+            return;
+        }
+
+        fetch(`?handler=ValidateBusinessName&name=${encodeURIComponent(businessNameInput)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to validate business name.");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.conflict) {
+                    nameError.textContent = "The business name is too similar to an existing business.";
+                    nameError.classList.remove("d-none");
+                }
+            })
+            .catch(error => {
+                console.error("Error validating business name:", error);
+            });
+    }
+
     function updateBusinessName() {
         const businessNameInput = document.getElementById("business-name-input").value.trim();
         const updateSuccess = document.getElementById("update-success");
         const updateError = document.getElementById("update-error");
+        const nameError = document.getElementById("business-name-error");
 
-        if (!businessNameInput) {
-            updateError.textContent = "Business name cannot be empty.";
+        updateSuccess.classList.add("d-none");
+        updateError.classList.add("d-none");
+
+        if (!businessNameInput || !nameError.classList.contains("d-none")) {
+            updateError.textContent = "Business name is invalid or conflicts with another.";
             updateError.classList.remove("d-none");
             return;
         }
 
-        fetch('/Businesses/BusinessDetails?handler=UpdateBusinessName', {
+        fetch('?handler=EditBusinessName', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
             },
-            body: JSON.stringify({ Id: '@Model.Business.Id', Name: businessNameInput })
+            body: JSON.stringify({
+                Id: '@Model.Business.Id',
+                Name: businessNameInput
+            })
         })
             .then(response => {
                 if (response.ok) {
-                    updateSuccess.classList.remove("d-none");
-                    updateError.classList.add("d-none");
+                    return response.json();
                 } else {
                     throw new Error('Failed to update');
                 }
             })
-            .catch(() => {
+            .then(data => {
+                if (data.success) {
+                    updateSuccess.textContent = "Business name updated successfully!";
+                    updateSuccess.classList.remove("d-none");
+
+                    // Update the displayed name and toggle back
+                    document.getElementById("business-name-container").textContent = businessNameInput;
+                    toggleEditMode();
+                } else {
+                    updateError.textContent = data.message || "Failed to update business name.";
+                    updateError.classList.remove("d-none");
+                }
+            })
+            .catch((error) => {
+                console.error(error);
                 updateError.textContent = "Failed to update business name. Please try again.";
                 updateError.classList.remove("d-none");
             });

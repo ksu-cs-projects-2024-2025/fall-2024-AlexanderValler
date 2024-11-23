@@ -1,34 +1,39 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Authorization;
-using BlockOut.Models;
 using BlockOut.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using BlockOut.Models;
+using Microsoft.AspNetCore.Identity;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlockOut.Pages.Businesses
 {
-    [Authorize]
+    [Authorize] // Ensures only authenticated users can access this page
     public class BusinessDetailsModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public BusinessDetailsModel(ApplicationDbContext context)
+        public BusinessDetailsModel(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         [BindProperty]
         public Business Business { get; set; }
 
-        public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
-
         [BindProperty(SupportsGet = true)]
         public string BusinessId { get; set; }
 
-        public bool IsOwnerOrManager { get; private set; }
+        public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
+
+        public bool IsOwnerOrManager { get; set; } = false;
 
         public async Task<IActionResult> OnGetAsync(string businessId)
         {
@@ -37,7 +42,6 @@ namespace BlockOut.Pages.Businesses
                 return NotFound("Business ID is required.");
             }
 
-            // Load the business and related roles
             Business = await _context.Businesses
                 .Include(b => b.UserBusinessRoles)
                 .ThenInclude(ubr => ubr.User)
@@ -50,40 +54,102 @@ namespace BlockOut.Pages.Businesses
 
             UserBusinessRoles = Business.UserBusinessRoles;
 
-            // Retrieve the current user's ID from the authentication claims
-            var currentUserId = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
-
-            if (string.IsNullOrEmpty(currentUserId))
-            {
-                // If we cannot retrieve the current user's ID, default IsOwnerOrManager to false
-                IsOwnerOrManager = false;
-                return Page();
-            }
-
-            // Check if the user has the Owner or Manager role
+            // Check if the logged-in user is an Owner or Manager of this business
+            var user = await _userManager.GetUserAsync(User);
             IsOwnerOrManager = UserBusinessRoles.Any(ubr =>
-                ubr.UserId == currentUserId && (ubr.Role == "Owner" || ubr.Role == "Manager"));
+                ubr.UserId == user.Id && (ubr.Role == "Owner" || ubr.Role == "Manager"));
 
             return Page();
         }
 
-        public async Task<IActionResult> OnPostEditBusinessNameAsync(string id)
+        public async Task<IActionResult> OnPostEditBusinessNameAsync([FromBody] BusinessUpdateModel model)
         {
-            if (!ModelState.IsValid)
+            if (model == null || string.IsNullOrWhiteSpace(model.Name))
             {
-                return Page();
+                return BadRequest(new { success = false, message = "Invalid business name." });
             }
 
-            var business = await _context.Businesses.FindAsync(id);
+            // Validate for duplicates or too-similar names
+            string normalizedBusinessName = NormalizeBusinessName(model.Name);
+
+            bool isNameConflict = _context.Businesses
+                .AsEnumerable() // Forces LINQ to execute in memory, allowing for custom methods
+                .Any(b => b.Id != model.Id && AreNamesTooSimilar(NormalizeBusinessName(b.Name), normalizedBusinessName));
+
+            if (isNameConflict)
+            {
+                return BadRequest(new { success = false, message = "The business name is too similar to an existing business." });
+            }
+
+            var business = await _context.Businesses.FindAsync(model.Id);
             if (business == null)
             {
-                return NotFound();
+                return NotFound(new { success = false, message = "Business not found." });
             }
 
-            business.Name = Business.Name;
+            business.Name = model.Name;
+
             await _context.SaveChangesAsync();
 
-            return RedirectToPage(new { id });
+            return new JsonResult(new { success = true });
+        }
+
+        public JsonResult OnGetValidateBusinessName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return new JsonResult(new { conflict = false });
+            }
+
+            string normalizedName = NormalizeBusinessName(name);
+
+            bool conflict = _context.Businesses
+                .AsEnumerable() // Forces LINQ to execute in memory, allowing for custom methods
+                .Any(b => AreNamesTooSimilar(NormalizeBusinessName(b.Name), normalizedName));
+
+            return new JsonResult(new { conflict });
+        }
+
+        private string NormalizeBusinessName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return string.Empty;
+            }
+
+            return Regex.Replace(name.ToUpperInvariant(), @"[^A-Z]", string.Empty); // Remove spaces, numbers, and special characters
+        }
+
+        private bool AreNamesTooSimilar(string existingName, string newName)
+        {
+            int distance = CalculateLevenshteinDistance(existingName, newName);
+            double similarity = 1.0 - (double)distance / Math.Max(existingName.Length, newName.Length);
+
+            // Stricter rule: consider names too similar if similarity is >= 80% 
+            // AND the Levenshtein distance is <= 3
+            return similarity >= 0.8 && distance <= 3;
+        }
+
+        private int CalculateLevenshteinDistance(string s, string t)
+        {
+            int[,] dp = new int[s.Length + 1, t.Length + 1];
+
+            for (int i = 0; i <= s.Length; i++)
+                dp[i, 0] = i;
+
+            for (int j = 0; j <= t.Length; j++)
+                dp[0, j] = j;
+
+            for (int i = 1; i <= s.Length; i++)
+            {
+                for (int j = 1; j <= t.Length; j++)
+                {
+                    int cost = s[i - 1] == t[j - 1] ? 0 : 1;
+                    dp[i, j] = Math.Min(Math.Min(dp[i - 1, j] + 1, dp[i, j - 1] + 1), dp[i - 1, j - 1] + cost);
+                }
+            }
+
+            return dp[s.Length, t.Length];
         }
 
         public class BusinessUpdateModel
