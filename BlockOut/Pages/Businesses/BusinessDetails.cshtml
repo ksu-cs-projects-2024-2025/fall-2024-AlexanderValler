@@ -68,12 +68,16 @@
     <!-- Main Content -->
     <div class="col-md-8">
         <h4>Actions</h4>
-        <button class="btn btn-secondary" onclick="window.location.href='/Businesses/ViewSchedules'">View Schedules</button>
+        <button class="btn btn-secondary"
+                onclick="window.location.href='/Businesses/ViewSchedules?businessId=@Model.Business.Id'">
+            View Schedules
+        </button>
         @if (Model.IsOwnerOrManager)
         {
             <button class="btn btn-primary" onclick="window.location.href='/Businesses/CreateSchedules'">Create Schedules</button>
         }
     </div>
+
 </div>
 
 <script>
