@@ -67,17 +67,39 @@
 
     <!-- Main Content -->
     <div class="col-md-8">
-        <h4>Actions</h4>
-        <button class="btn btn-secondary"
-                onclick="window.location.href='/Businesses/ViewSchedules?businessId=@Model.Business.Id'">
-            View Schedules
-        </button>
+        <!-- Schedules Section -->
+        <h4>Schedules</h4>
+        <div>
+            <!-- Placeholder weekly calendar -->
+            <div style="border: 1px solid #ccc; padding: 15px; height: 200px; margin-bottom: 15px; text-align: center;">
+                <p>[Weekly Calendar Preview Placeholder]</p>
+            </div>
+
+            <button class="btn btn-secondary"
+                    onclick="window.location.href='/Businesses/ViewSchedules?businessId=@Model.Business.Id'">
+                View Schedules
+            </button>
+            @if (Model.IsOwnerOrManager)
+            {
+                <button class="btn btn-primary" onclick="window.location.href='/Businesses/CreateSchedules'">Create Schedules</button>
+            }
+        </div>
+
+        <!-- Manage Employees Section -->
         @if (Model.IsOwnerOrManager)
         {
-            <button class="btn btn-primary" onclick="window.location.href='/Businesses/CreateSchedules'">Create Schedules</button>
+            <h4>Manage Employees</h4>
+            <div class="mb-3">
+                <button class="btn btn-warning mb-2" onclick="window.location.href='/Businesses/ManageEmployees?businessId=@Model.Business.Id'">Adjust Roles</button>
+                <button class="btn btn-danger mb-2" onclick="window.location.href='/Businesses/RemoveEmployee?businessId=@Model.Business.Id'">Remove Employee</button>
+            </div>
+
+            <div class="mt-2">
+                <label for="invite-code">Invite Code:</label>
+                <input type="text" id="invite-code" class="form-control" value="@Model.Business.Id" readonly />
+            </div>
         }
     </div>
-
 </div>
 
 <script>
