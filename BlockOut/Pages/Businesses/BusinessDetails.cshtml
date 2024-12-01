@@ -76,7 +76,7 @@
             </div>
 
             <button class="btn btn-secondary"
-                    onclick="window.location.href='/Businesses/ViewSchedules?businessId=@Model.Business.Id'">
+                    onclick="window.location.href='/Businesses/ViewSchedules?businessId=@Model.EncodedBusinessId'">
                 View Schedules
             </button>
             @if (Model.IsOwnerOrManager)
@@ -90,13 +90,13 @@
         {
             <h4>Manage Employees</h4>
             <div class="mb-3">
-                <button class="btn btn-warning mb-2" onclick="window.location.href='/Businesses/ManageEmployees?businessId=@Model.Business.Id'">Adjust Roles</button>
-                <button class="btn btn-danger mb-2" onclick="window.location.href='/Businesses/RemoveEmployee?businessId=@Model.Business.Id'">Remove Employee</button>
+                <button class="btn btn-warning mb-2" onclick="window.location.href='/Businesses/ManageEmployees?businessId=@Model.EncodedBusinessId'">Adjust Roles</button>
+                <button class="btn btn-danger mb-2" onclick="window.location.href='/Businesses/RemoveEmployee?businessId=@Model.EncodedBusinessId'">Remove Employee</button>
             </div>
 
             <div class="mt-2">
                 <label for="invite-code">Invite Code:</label>
-                <input type="text" id="invite-code" class="form-control" value="@Model.Business.Id" readonly />
+                <input type="text" id="invite-code" class="form-control" value="@Model.EncodedBusinessId" readonly />
             </div>
         }
     </div>

@@ -28,6 +28,14 @@ public class Program
             options.AccessDeniedPath = "/"; // Redirect to the homepage if access is denied
         });
 
+        // Add session services
+        builder.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromMinutes(30); // Session timeout
+            options.Cookie.HttpOnly = true; // For security
+            options.Cookie.IsEssential = true; // Required if GDPR compliance is needed
+        });
+
         var app = builder.Build();
 
         // Apply migrations and seed data
@@ -69,6 +77,9 @@ public class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        // Use session middleware
+        app.UseSession();
 
         app.MapRazorPages();
 

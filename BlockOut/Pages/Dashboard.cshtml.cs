@@ -20,17 +20,39 @@ namespace BlockOut.Pages.Dashboard
             _userManager = userManager;
         }
 
-        public List<UserBusinessRole> UserBusinesses { get; set; }
+        public List<UserBusinessDisplay> UserBusinesses { get; set; }
 
         public async Task OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // Fetch all businesses the user is part of, including their role
-            UserBusinesses = await _context.UserBusinessRoles
+            var userBusinessRoles = await _context.UserBusinessRoles
                 .Include(ubr => ubr.Business)
                 .Where(ubr => ubr.UserId == user.Id)
                 .ToListAsync();
+
+            UserBusinesses = userBusinessRoles.Select(ubr => new UserBusinessDisplay
+            {
+                Name = ubr.Business.Name,
+                Role = ubr.Role,
+                EncodedBusinessId = EncodeBusinessId(ubr.Business.Id)
+            }).ToList();
         }
+
+        private string EncodeBusinessId(string businessId)
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(businessId);
+            var base64 = Convert.ToBase64String(bytes);
+            char[] charArray = base64.ToCharArray();
+            Array.Reverse(charArray);
+            return new string(charArray);
+        }
+    }
+
+    public class UserBusinessDisplay
+    {
+        public string Name { get; set; }
+        public string Role { get; set; }
+        public string EncodedBusinessId { get; set; }
     }
 }

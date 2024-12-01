@@ -12,22 +12,18 @@
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">@userBusiness.Business.Name</h5>
+                    <h5 class="card-title">@userBusiness.Name</h5>
 
                     <p class="card-text">
-                        <!-- Badge to show the user's role in the business -->
                         <span class="badge bg-primary">@userBusiness.Role</span>
                     </p>
 
-                    <!-- Button to view or manage the business -->
-                    <a asp-page="/Businesses/BusinessDetails" asp-route-businessId="@userBusiness.Business.Id" class="btn btn-primary">Manage</a>
-
+                    <a asp-page="/Businesses/BusinessDetails" asp-route-businessId="@userBusiness.EncodedBusinessId" class="btn btn-primary">Manage</a>
                 </div>
             </div>
         </div>
     }
 
-    <!-- Create New Business Card -->
     <div class="col-md-4 mb-4">
         <div class="card text-center">
             <div class="card-body">

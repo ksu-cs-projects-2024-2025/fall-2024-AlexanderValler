@@ -6,14 +6,15 @@ using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace BlockOut.Pages.Businesses
 {
-    [Authorize] // Ensures only authenticated users can access this page
+    [Authorize]
     public class BusinessDetailsModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -31,6 +32,8 @@ namespace BlockOut.Pages.Businesses
         [BindProperty(SupportsGet = true)]
         public string BusinessId { get; set; }
 
+        public string EncodedBusinessId { get; set; }
+
         public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
 
         public bool IsOwnerOrManager { get; set; } = false;
@@ -39,7 +42,24 @@ namespace BlockOut.Pages.Businesses
         {
             if (string.IsNullOrWhiteSpace(businessId))
             {
-                return NotFound("Business ID is required.");
+                businessId = HttpContext.Session.GetString("CurrentBusinessId");
+                if (string.IsNullOrWhiteSpace(businessId))
+                {
+                    return NotFound("Business ID is required.");
+                }
+            }
+            else
+            {
+                try
+                {
+                    businessId = DecodeBusinessId(businessId);
+                }
+                catch (FormatException)
+                {
+                    return BadRequest("Invalid business ID format.");
+                }
+
+                HttpContext.Session.SetString("CurrentBusinessId", businessId);
             }
 
             Business = await _context.Businesses
@@ -54,44 +74,13 @@ namespace BlockOut.Pages.Businesses
 
             UserBusinessRoles = Business.UserBusinessRoles;
 
-            // Check if the logged-in user is an Owner or Manager of this business
             var user = await _userManager.GetUserAsync(User);
             IsOwnerOrManager = UserBusinessRoles.Any(ubr =>
                 ubr.UserId == user.Id && (ubr.Role == "Owner" || ubr.Role == "Manager"));
 
+            EncodedBusinessId = EncodeBusinessId(businessId);
+
             return Page();
-        }
-
-        public async Task<IActionResult> OnPostEditBusinessNameAsync([FromBody] BusinessUpdateModel model)
-        {
-            if (model == null || string.IsNullOrWhiteSpace(model.Name))
-            {
-                return BadRequest(new { success = false, message = "Invalid business name." });
-            }
-
-            // Validate for duplicates or too-similar names
-            string normalizedBusinessName = NormalizeBusinessName(model.Name);
-
-            bool isNameConflict = _context.Businesses
-                .AsEnumerable() // Forces LINQ to execute in memory, allowing for custom methods
-                .Any(b => b.Id != model.Id && AreNamesTooSimilar(NormalizeBusinessName(b.Name), normalizedBusinessName));
-
-            if (isNameConflict)
-            {
-                return BadRequest(new { success = false, message = "The business name is too similar to an existing business." });
-            }
-
-            var business = await _context.Businesses.FindAsync(model.Id);
-            if (business == null)
-            {
-                return NotFound(new { success = false, message = "Business not found." });
-            }
-
-            business.Name = model.Name;
-
-            await _context.SaveChangesAsync();
-
-            return new JsonResult(new { success = true });
         }
 
         public JsonResult OnGetValidateBusinessName(string name)
@@ -104,41 +93,46 @@ namespace BlockOut.Pages.Businesses
             string normalizedName = NormalizeBusinessName(name);
 
             bool conflict = _context.Businesses
-                .AsEnumerable() // Forces LINQ to execute in memory, allowing for custom methods
+                .AsEnumerable()
                 .Any(b => AreNamesTooSimilar(NormalizeBusinessName(b.Name), normalizedName));
 
             return new JsonResult(new { conflict });
         }
 
+        private string EncodeBusinessId(string businessId)
+        {
+            var bytes = Encoding.UTF8.GetBytes(businessId);
+            var base64 = Convert.ToBase64String(bytes);
+            char[] charArray = base64.ToCharArray();
+            Array.Reverse(charArray);
+            return new string(charArray);
+        }
+
+        private string DecodeBusinessId(string encodedId)
+        {
+            char[] charArray = encodedId.ToCharArray();
+            Array.Reverse(charArray);
+            var bytes = Convert.FromBase64String(new string(charArray));
+            return Encoding.UTF8.GetString(bytes);
+        }
+
         private string NormalizeBusinessName(string name)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return string.Empty;
-            }
-
-            return Regex.Replace(name.ToUpperInvariant(), @"[^A-Z]", string.Empty); // Remove spaces, numbers, and special characters
+            return Regex.Replace(name?.ToUpperInvariant() ?? string.Empty, @"[^A-Z]", string.Empty);
         }
 
         private bool AreNamesTooSimilar(string existingName, string newName)
         {
             int distance = CalculateLevenshteinDistance(existingName, newName);
             double similarity = 1.0 - (double)distance / Math.Max(existingName.Length, newName.Length);
-
-            // Stricter rule: consider names too similar if similarity is >= 80% 
-            // AND the Levenshtein distance is <= 3
             return similarity >= 0.8 && distance <= 3;
         }
 
         private int CalculateLevenshteinDistance(string s, string t)
         {
             int[,] dp = new int[s.Length + 1, t.Length + 1];
-
-            for (int i = 0; i <= s.Length; i++)
-                dp[i, 0] = i;
-
-            for (int j = 0; j <= t.Length; j++)
-                dp[0, j] = j;
+            for (int i = 0; i <= s.Length; i++) dp[i, 0] = i;
+            for (int j = 0; j <= t.Length; j++) dp[0, j] = j;
 
             for (int i = 1; i <= s.Length; i++)
             {
@@ -148,14 +142,7 @@ namespace BlockOut.Pages.Businesses
                     dp[i, j] = Math.Min(Math.Min(dp[i - 1, j] + 1, dp[i, j - 1] + 1), dp[i - 1, j - 1] + cost);
                 }
             }
-
             return dp[s.Length, t.Length];
-        }
-
-        public class BusinessUpdateModel
-        {
-            public string Id { get; set; }
-            public string Name { get; set; }
         }
     }
 }
