@@ -14,10 +14,13 @@ namespace BlockOut.Data
         public DbSet<Calendar> Calendars { get; set; }
         public DbSet<OpenHours> OpenHours { get; set; }
         public DbSet<UserBusinessRole> UserBusinessRoles { get; set; } // For multi-role support
+        public DbSet<UserBusinessCalendar> UserBusinessCalendars { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder); // Required to configure ASP.NET Identity tables
+
 
             // Configure the AvailabilityCalendar and PreferencesCalendar relationships for ApplicationUser
             modelBuilder.Entity<ApplicationUser>()

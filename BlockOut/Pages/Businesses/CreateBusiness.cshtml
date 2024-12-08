@@ -16,9 +16,6 @@
         <span id="business-name-error" class="text-danger">@Model.ConflictingBusinessNameMessage</span>
     </div>
 
-    <!-- User's Role - Automatically set as Owner -->
-    <input type="hidden" asp-for="UserRole" value="Owner" />
-
     <!-- Open Hours Fields -->
     <h4>Business Open Hours</h4>
     <p>Set open and close times for each day. Toggle off a day if the business is closed.</p>
@@ -28,16 +25,16 @@
         <div class="form-group row">
             <label class="col-sm-2 col-form-label">@Model.DaysOfWeek[i]</label>
             <div class="col-sm-2">
-                <input type="checkbox" id="day-toggle-@i" onchange="toggleDay(@i)" checked />
+                <input type="checkbox" id="day-toggle-@i" name="Business.OpenHours[@i].IsClosed" value="false" onchange="toggleDay(@i)" checked />
                 <label for="day-toggle-@i">Open</label>
             </div>
             <div class="col-sm-4">
                 <label>Open Time</label>
-                <input type="time" asp-for="Business.OpenHours[i].OpenTime" class="form-control" id="open-time-@i" />
+                <input type="time" asp-for="Business.OpenHours.ToList()[@i].OpenTime" class="form-control" id="open-time-@i" />
             </div>
             <div class="col-sm-4">
                 <label>Close Time</label>
-                <input type="time" asp-for="Business.OpenHours[i].CloseTime" class="form-control" id="close-time-@i" />
+                <input type="time" asp-for="Business.OpenHours.ToList()[@i].OpenTime" class="form-control" id="open-time-@i" />
             </div>
         </div>
     }

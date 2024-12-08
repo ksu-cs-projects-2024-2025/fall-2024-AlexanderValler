@@ -39,13 +39,13 @@ namespace BlockOut.Data
                         Name = "Test Business",
                         OpenHours = new List<OpenHours>
                         {
-                            new OpenHours { Day = "Sunday", OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) },
-                            new OpenHours { Day = "Monday", OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) },
-                            new OpenHours { Day = "Tuesday", OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) },
-                            new OpenHours { Day = "Wednesday", OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) },
-                            new OpenHours { Day = "Thursday", OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) },
-                            new OpenHours { Day = "Friday", OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) },
-                            new OpenHours { Day = "Saturday", OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) },
+                            new OpenHours { Day = 1, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Sunday
+                            new OpenHours { Day = 2, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Monday
+                            new OpenHours { Day = 3, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Tuesday
+                            new OpenHours { Day = 4, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Wednesday
+                            new OpenHours { Day = 5, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Thursday
+                            new OpenHours { Day = 6, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Friday
+                            new OpenHours { Day = 7, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Saturday
                         }
                     };
                     context.Businesses.Add(business);

@@ -42,12 +42,18 @@ namespace BlockOut.Pages.Businesses
         {
             if (Business.OpenHours == null || Business.OpenHours.Count == 0)
             {
-                Business.OpenHours = DaysOfWeek.Select(day => new OpenHours
+                // Initialize OpenHours for each day of the week with defaults
+                Business.OpenHours = DaysOfWeek.Select((day, index) => new OpenHours
                 {
-                    Day = day,
-                    OpenTime = new TimeSpan(9, 0, 0), // Default to 9 AM
-                    CloseTime = new TimeSpan(17, 0, 0) // Default to 5 PM
+                    Day = index + 1, // Days indexed 1 (Sunday) to 7 (Saturday)
+                    OpenTime = TimeSpan.Zero, // Default to closed
+                    CloseTime = TimeSpan.Zero // Default to closed
                 }).ToList();
+            }
+            else
+            {
+                // Ensure OpenHours is a List for indexing
+                Business.OpenHours = Business.OpenHours.ToList();
             }
 
             return Page();
@@ -87,10 +93,19 @@ namespace BlockOut.Pages.Businesses
                 return Page();
             }
 
-            // Remove disabled days (OpenTime and CloseTime as TimeSpan.Zero indicate closed)
-            Business.OpenHours = Business.OpenHours
-                .Where(oh => oh.OpenTime != TimeSpan.Zero || oh.CloseTime != TimeSpan.Zero)
-                .ToList();
+            // Ensure OpenHours are properly assigned
+            foreach (var openHour in Business.OpenHours)
+            {
+                // Validate OpenTime and CloseTime; set as closed if invalid
+                if (openHour.OpenTime == TimeSpan.Zero && openHour.CloseTime == TimeSpan.Zero)
+                {
+                    openHour.IsClosed = true;
+                }
+                else
+                {
+                    openHour.IsClosed = false;
+                }
+            }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -132,7 +147,6 @@ namespace BlockOut.Pages.Businesses
 
             return new JsonResult(new { conflict });
         }
-
 
         private string NormalizeBusinessName(string name)
         {
@@ -176,7 +190,6 @@ namespace BlockOut.Pages.Businesses
             return dp[s.Length, t.Length];
         }
 
-        //create the unique ID
         private string GenerateUniqueBusinessId()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

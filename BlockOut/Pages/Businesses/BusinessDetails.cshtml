@@ -21,8 +21,31 @@
     <span id="business-name-error" class="text-danger d-none">Business name is too similar to an existing name.</span>
 </div>
 
-<!-- Sidebar with user roles -->
+<!-- Page Layout -->
 <div class="row">
+    <!-- Left Column: Calendars List -->
+    <div class="col-md-8">
+        <h4>Calendars</h4>
+        @if (Model.Calendars != null && Model.Calendars.Any())
+        {
+            <ul class="list-group">
+                @foreach (var calendar in Model.Calendars)
+                {
+                    <li class="list-group-item">
+                        <h5>@calendar.Name</h5>
+                        <p>Participants: @string.Join(", ", calendar.UserBusinessCalendars.Select(ubc => ubc.User.UserName))</p>
+                        <a asp-page="/Calendars/View" asp-route-calendarId="@calendar.Id" class="text-primary">View Calendar</a>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p>No calendars available.</p>
+        }
+    </div>
+
+    <!-- Right Column: Users in Business -->
     <div class="col-md-4">
         <h4>Users in Business</h4>
         <ul class="list-group">
@@ -63,44 +86,14 @@
                 </ul>
             </li>
         </ul>
-    </div>
 
-    <!-- Main Content -->
-    <div class="col-md-8">
-        <!-- Schedules Section -->
-        <h4>Schedules</h4>
-        <div>
-            <!-- Placeholder weekly calendar -->
-            <div style="border: 1px solid #ccc; padding: 15px; height: 200px; margin-bottom: 15px; text-align: center;">
-                <p>[Weekly Calendar Preview Placeholder]</p>
-            </div>
-
-            <button class="btn btn-secondary"
-                    onclick="window.location.href='/Businesses/ViewSchedules?businessId=@Model.EncodedBusinessId'">
-                View Schedules
-            </button>
-            @if (Model.IsOwnerOrManager)
-            {
-                <button class="btn btn-primary" onclick="window.location.href='/Businesses/CreateSchedules'">Create Schedules</button>
-            }
-        </div>
-
-        <!-- Manage Employees Section -->
         @if (Model.IsOwnerOrManager)
         {
-            <h4>Manage Employees</h4>
-            <div class="mb-3">
-                <button class="btn btn-warning mb-2" onclick="window.location.href='/Businesses/ManageEmployees?businessId=@Model.EncodedBusinessId'">Adjust Roles</button>
-                <button class="btn btn-danger mb-2" onclick="window.location.href='/Businesses/RemoveEmployee?businessId=@Model.EncodedBusinessId'">Remove Employee</button>
-            </div>
-
-            <div class="mt-2">
-                <label for="invite-code">Invite Code:</label>
-                <input type="text" id="invite-code" class="form-control" value="@Model.EncodedBusinessId" readonly />
-            </div>
+            <button class="btn btn-primary mt-3" onclick="window.location.href='/Businesses/ManageEmployees?businessId=@Model.EncodedBusinessId'">Manage Employees</button>
         }
     </div>
 </div>
+
 
 <script>
     function toggleEditMode() {
@@ -179,7 +172,6 @@
                     updateSuccess.textContent = "Business name updated successfully!";
                     updateSuccess.classList.remove("d-none");
 
-                    // Update the displayed name and toggle back
                     document.getElementById("business-name-container").textContent = businessNameInput;
                     toggleEditMode();
                 } else {

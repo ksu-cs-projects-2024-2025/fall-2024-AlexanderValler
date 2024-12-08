@@ -35,6 +35,7 @@ namespace BlockOut.Pages.Businesses
         public string EncodedBusinessId { get; set; }
 
         public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
+        public List<Calendar> Calendars { get; set; } = new List<Calendar>();
 
         public bool IsOwnerOrManager { get; set; } = false;
 
@@ -65,6 +66,9 @@ namespace BlockOut.Pages.Businesses
             Business = await _context.Businesses
                 .Include(b => b.UserBusinessRoles)
                 .ThenInclude(ubr => ubr.User)
+                .Include(b => b.Calendars)
+                .ThenInclude(c => c.UserBusinessCalendars)
+                .ThenInclude(ubc => ubc.User)
                 .FirstOrDefaultAsync(b => b.Id == businessId);
 
             if (Business == null)
@@ -78,25 +82,13 @@ namespace BlockOut.Pages.Businesses
             IsOwnerOrManager = UserBusinessRoles.Any(ubr =>
                 ubr.UserId == user.Id && (ubr.Role == "Owner" || ubr.Role == "Manager"));
 
+            Calendars = IsOwnerOrManager
+                ? Business.Calendars
+                : Business.Calendars.Where(c => c.UserBusinessCalendars.Any(ubc => ubc.UserId == user.Id)).ToList();
+
             EncodedBusinessId = EncodeBusinessId(businessId);
 
             return Page();
-        }
-
-        public JsonResult OnGetValidateBusinessName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return new JsonResult(new { conflict = false });
-            }
-
-            string normalizedName = NormalizeBusinessName(name);
-
-            bool conflict = _context.Businesses
-                .AsEnumerable()
-                .Any(b => AreNamesTooSimilar(NormalizeBusinessName(b.Name), normalizedName));
-
-            return new JsonResult(new { conflict });
         }
 
         private string EncodeBusinessId(string businessId)
