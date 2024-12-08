@@ -11,8 +11,17 @@ namespace BlockOut.Models
         public string Name { get; set; }
 
 
-        public ICollection<OpenHours> OpenHours { get; set; } = new List<OpenHours>();
-        public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
+
+        // Collection of calendars associated with this business
         public List<Calendar> Calendars { get; set; } = new List<Calendar>();
+
+        // Collection of open hours
+        public List<OpenHours> OpenHours { get; set; } = new List<OpenHours>();
+
+        // Collection of user roles in this business
+        public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
+
+        // Collection of UserBusinessCalendars
+        public List<UserBusinessCalendar> UserBusinessCalendars { get; set; } = new List<UserBusinessCalendar>();
     }
 }

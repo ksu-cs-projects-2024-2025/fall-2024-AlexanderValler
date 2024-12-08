@@ -35,7 +35,7 @@ namespace BlockOut.Data
                 {
                     business = new Business
                     {
-                        Id = GenerateUniqueBusinessId(context),
+                        Id = GenerateUniqueBusinessId(context),  //Guid.NewGuid().ToString(),
                         Name = "Test Business",
                         OpenHours = new List<OpenHours>
                         {
@@ -46,6 +46,10 @@ namespace BlockOut.Data
                             new OpenHours { Day = 5, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Thursday
                             new OpenHours { Day = 6, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Friday
                             new OpenHours { Day = 7, OpenTime = new TimeSpan(9, 0, 0), CloseTime = new TimeSpan(17, 0, 0) }, // Saturday
+                        },
+                        Calendars = new List<Calendar>
+                        {
+                            new Calendar { Id = Guid.NewGuid().ToString(), Name = "Default Calendar", Type = "Weekly", Data = "{}" }
                         }
                     };
                     context.Businesses.Add(business);

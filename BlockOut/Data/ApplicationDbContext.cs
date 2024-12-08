@@ -16,11 +16,9 @@ namespace BlockOut.Data
         public DbSet<UserBusinessRole> UserBusinessRoles { get; set; } // For multi-role support
         public DbSet<UserBusinessCalendar> UserBusinessCalendars { get; set; }
 
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder); // Required to configure ASP.NET Identity tables
-
 
             // Configure the AvailabilityCalendar and PreferencesCalendar relationships for ApplicationUser
             modelBuilder.Entity<ApplicationUser>()
@@ -76,6 +74,28 @@ namespace BlockOut.Data
                 .WithMany(b => b.Calendars)
                 .HasForeignKey(c => c.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade); // Optional: Set cascading delete
+
+            // Configure many-to-many relationship for UserBusinessCalendar
+            modelBuilder.Entity<UserBusinessCalendar>()
+                .HasKey(ubc => new { ubc.UserId, ubc.BusinessId, ubc.CalendarId }); // Composite key for uniqueness
+
+            modelBuilder.Entity<UserBusinessCalendar>()
+                .HasOne(ubc => ubc.User)
+                .WithMany(u => u.UserBusinessCalendars)
+                .HasForeignKey(ubc => ubc.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserBusinessCalendar>()
+                .HasOne(ubc => ubc.Business)
+                .WithMany(b => b.UserBusinessCalendars)
+                .HasForeignKey(ubc => ubc.BusinessId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserBusinessCalendar>()
+                .HasOne(ubc => ubc.Calendar)
+                .WithMany(c => c.UserBusinessCalendars)
+                .HasForeignKey(ubc => ubc.CalendarId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
