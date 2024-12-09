@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BlockOut.Pages.Businesses
 {
-    [Authorize] // Ensures only authenticated users can access this page
+    [Authorize]
     public class CreateBusinessModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -28,123 +28,94 @@ namespace BlockOut.Pages.Businesses
         public Business Business { get; set; } = new Business();
 
         [BindProperty]
-        public bool BusinessNameExists { get; set; } = false;
-
-        [BindProperty]
-        public string ConflictingBusinessNameMessage { get; set; } = string.Empty;
-
-        [BindProperty]
-        public string UserRole { get; set; } = "Owner"; // Default to "Owner"
+        public string? ConflictingBusinessNameMessage { get; set; } = string.Empty;
 
         public string[] DaysOfWeek = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
         public async Task<IActionResult> OnGetAsync()
         {
-            if (Business.OpenHours == null || Business.OpenHours.Count == 0)
+            Business.OpenHours = Enumerable.Range(1, 7).Select(day => new OpenHours
             {
-                // Initialize OpenHours for each day of the week with defaults
-                Business.OpenHours = DaysOfWeek.Select((day, index) => new OpenHours
-                {
-                    Day = index + 1, // Days indexed 1 (Sunday) to 7 (Saturday)
-                    OpenTime = TimeSpan.Zero, // Default to closed
-                    CloseTime = TimeSpan.Zero // Default to closed
-                }).ToList();
-            }
-            else
-            {
-                // Ensure OpenHours is a List for indexing
-                Business.OpenHours = Business.OpenHours.ToList();
-            }
+                Day = day,
+                OpenTime = new TimeSpan(9, 0, 0),
+                CloseTime = new TimeSpan(17, 0, 0),
+                IsClosed = false
+            }).ToList();
+
+            ConflictingBusinessNameMessage = string.Empty;
 
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            Console.WriteLine("OnPostAsync triggered"); // Debugging output
+            Console.WriteLine("OnPostAsync triggered");
+
+            if (string.IsNullOrEmpty(Business.Id))
+            {
+                Business.Id = GenerateUniqueBusinessId();
+                Console.WriteLine($"Generated Business Id: {Business.Id}");
+            }
+
+            ConflictingBusinessNameMessage ??= string.Empty;
+
+            ModelState.Remove("Business.Id");
+            ModelState.Remove("ConflictingBusinessNameMessage");
+
             if (!ModelState.IsValid)
             {
-                Console.WriteLine("ModelState is invalid.");
-                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                foreach (var key in ModelState.Keys)
                 {
-                    Console.WriteLine($"Error: {error.ErrorMessage}");
+                    var state = ModelState[key];
+                    foreach (var error in state.Errors)
+                    {
+                        Console.WriteLine($"Key: {key}, Error: {error.ErrorMessage}");
+                    }
                 }
                 return Page();
             }
-            Console.WriteLine("ModelState is valid. Proceeding with business creation...");
 
-            string generatedId;
-            do
-            {
-                generatedId = GenerateUniqueBusinessId();
-            } while (_context.Businesses.Any(b => b.Id == generatedId));
-
-            Console.WriteLine($"Generated unique ID: {generatedId}");
-            Business.Id = generatedId;
-
-            string normalizedBusinessName = NormalizeBusinessName(Business.Name);
-
-            BusinessNameExists = _context.Businesses
-                .AsEnumerable()
-                .Any(b => AreNamesTooSimilar(NormalizeBusinessName(b.Name), normalizedBusinessName));
-            if (BusinessNameExists)
-            {
-                ConflictingBusinessNameMessage = "The business name is too similar to an existing business.";
-                return Page();
-            }
-
-            // Ensure OpenHours are properly assigned
             foreach (var openHour in Business.OpenHours)
             {
-                // Validate OpenTime and CloseTime; set as closed if invalid
-                if (openHour.OpenTime == TimeSpan.Zero && openHour.CloseTime == TimeSpan.Zero)
-                {
-                    openHour.IsClosed = true;
-                }
-                else
-                {
-                    openHour.IsClosed = false;
-                }
+                openHour.BusinessId = Business.Id;
             }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                Console.WriteLine("User is null. Cannot proceed with business creation.");
                 return RedirectToPage("/Index");
             }
 
-            Console.WriteLine("Associating business with user...");
-            Business.UserBusinessRoles.Add(new UserBusinessRole
+            Business.UserBusinessRoles = new List<UserBusinessRole>
             {
-                UserId = user.Id,
-                Business = Business,
-                Role = "Owner"
-            });
+                new UserBusinessRole
+                {
+                    UserId = user.Id,
+                    BusinessId = Business.Id,
+                    Role = "Owner"
+                }
+            };
 
             try
             {
-                Console.WriteLine("Saving business to the database...");
                 _context.Businesses.Add(Business);
                 await _context.SaveChangesAsync();
                 Console.WriteLine("Business created successfully.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving business: {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
                 return Page();
             }
 
-            return RedirectToPage("/Businesses/Index");
+            return RedirectToPage("/Dashboard");
         }
 
         public JsonResult OnGetValidateBusinessName(string name)
         {
             string normalizedName = NormalizeBusinessName(name);
-            bool conflict = _context.Businesses
-                .AsEnumerable() // Forces LINQ to execute in memory, allowing for custom methods
+            bool conflict = _context.Businesses.AsEnumerable()
                 .Any(b => AreNamesTooSimilar(NormalizeBusinessName(b.Name), normalizedName));
-
             return new JsonResult(new { conflict });
         }
 
@@ -155,7 +126,7 @@ namespace BlockOut.Pages.Businesses
                 return string.Empty;
             }
 
-            return Regex.Replace(name.ToUpperInvariant(), @"[^A-Z]", string.Empty); // Remove spaces, numbers, and special characters
+            return Regex.Replace(name.ToUpperInvariant(), @"[^A-Z]", string.Empty);
         }
 
         private bool AreNamesTooSimilar(string existingName, string newName)
@@ -163,27 +134,21 @@ namespace BlockOut.Pages.Businesses
             int distance = CalculateLevenshteinDistance(existingName, newName);
             double similarity = 1.0 - (double)distance / Math.Max(existingName.Length, newName.Length);
 
-            // Stricter rule: consider names too similar if similarity is >= 80% 
-            // AND the Levenshtein distance is <= 3
             return similarity >= 0.8 && distance <= 3;
         }
 
         private int CalculateLevenshteinDistance(string s, string t)
         {
             int[,] dp = new int[s.Length + 1, t.Length + 1];
-
-            for (int i = 0; i <= s.Length; i++)
-                dp[i, 0] = i;
-
-            for (int j = 0; j <= t.Length; j++)
-                dp[0, j] = j;
+            for (int i = 0; i <= s.Length; i++) dp[i, 0] = i;
+            for (int j = 0; j <= t.Length; j++) dp[0, j] = j;
 
             for (int i = 1; i <= s.Length; i++)
             {
                 for (int j = 1; j <= t.Length; j++)
                 {
                     int cost = s[i - 1] == t[j - 1] ? 0 : 1;
-                    dp[i, j] = Math.Min(Math.Min(dp[i - 1, j] + 1, dp[i, j - 1] + 1), dp[i - 1, j - 1] + cost);
+                    dp[i, j] = Math.Min(dp[i - 1, j] + 1, Math.Min(dp[i, j - 1] + 1, dp[i - 1, j - 1] + cost));
                 }
             }
 

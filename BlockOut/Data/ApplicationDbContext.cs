@@ -8,6 +8,13 @@ namespace BlockOut.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // Ensure that SQLite foreign key constraints are enabled
+            optionsBuilder.UseSqlite("Data Source=app.db;");
+            optionsBuilder.EnableSensitiveDataLogging(); // Optional: Enables detailed logging (for debugging)
+        }
+
         // Custom entities
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<Business> Businesses { get; set; }

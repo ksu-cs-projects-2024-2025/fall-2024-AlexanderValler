@@ -7,37 +7,42 @@
 <h2>Create New Business</h2>
 
 <form method="post" oninput="checkFormValidity()" id="create-business-form">
-    <!-- Business Name Input with Validation -->
     @Html.AntiForgeryToken()
+
+    <!-- Hidden field for Business.Id -->
+    <input type="hidden" asp-for="Business.Id" value="@Model.Business.Id" />
+    <span asp-validation-for="Business.Id" class="text-danger"></span>
+
+    <!-- Business Name -->
     <div class="form-group">
         <label asp-for="Business.Name">Business Name</label>
-        <input asp-for="Business.Name" id="business-name" class="form-control" onblur="checkBusinessName()" />
+        <input asp-for="Business.Name" id="business-name" class="form-control" onblur="checkBusinessName()" required />
         <span asp-validation-for="Business.Name" class="text-danger"></span>
         <span id="business-name-error" class="text-danger">@Model.ConflictingBusinessNameMessage</span>
     </div>
 
-    <!-- Open Hours Fields -->
+    <!-- Open Hours -->
     <h4>Business Open Hours</h4>
-    <p>Set open and close times for each day. Toggle off a day if the business is closed.</p>
-
+    <p>Set open and close times for each day. Toggle "Closed" if the business is closed for the day.</p>
     @for (int i = 0; i < Model.DaysOfWeek.Length; i++)
     {
         <div class="form-group row">
             <label class="col-sm-2 col-form-label">@Model.DaysOfWeek[i]</label>
             <div class="col-sm-2">
-                <input type="checkbox" id="day-toggle-@i" name="Business.OpenHours[@i].IsClosed" value="false" onchange="toggleDay(@i)" checked />
-                <label for="day-toggle-@i">Open</label>
+                <input type="checkbox" id="day-toggle-@i" name="Business.OpenHours[@i].IsClosed" value="true" onchange="toggleDay(@i)" />
+                <label for="day-toggle-@i">Closed</label>
             </div>
             <div class="col-sm-4">
                 <label>Open Time</label>
-                <input type="time" asp-for="Business.OpenHours.ToList()[@i].OpenTime" class="form-control" id="open-time-@i" />
+                <input type="time" name="Business.OpenHours[@i].OpenTime" class="form-control" id="open-time-@i" />
             </div>
             <div class="col-sm-4">
                 <label>Close Time</label>
-                <input type="time" asp-for="Business.OpenHours.ToList()[@i].OpenTime" class="form-control" id="open-time-@i" />
+                <input type="time" name="Business.OpenHours[@i].CloseTime" class="form-control" id="close-time-@i" />
             </div>
         </div>
     }
+    <div asp-validation-summary="All" class="text-danger"></div>
 
     <!-- Submit Button -->
     <button type="submit" id="create-business-button" class="btn btn-primary" disabled>Create Business</button>
@@ -49,8 +54,13 @@
         const closeTimeInput = document.getElementById(`close-time-${index}`);
         const isChecked = document.getElementById(`day-toggle-${index}`).checked;
 
-        openTimeInput.disabled = !isChecked;
-        closeTimeInput.disabled = !isChecked;
+        openTimeInput.disabled = isChecked;
+        closeTimeInput.disabled = isChecked;
+
+        if (isChecked) {
+            openTimeInput.value = "";
+            closeTimeInput.value = "";
+        }
     }
 
     function checkBusinessName() {
@@ -66,13 +76,7 @@
         }
 
         fetch(`/Businesses/CreateBusiness?handler=ValidateBusinessName&name=${encodeURIComponent(nameValue)}`)
-            .then(response => {
-                if (!response.ok) {
-                    console.error("Failed to validate business name.");
-                    return { conflict: false }; // Default to no conflict
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.conflict) {
                     errorSpan.textContent = "The business name is already taken.";
@@ -82,9 +86,7 @@
                     createButton.disabled = false;
                 }
             })
-            .catch(error => {
-                console.error("Error validating business name:", error);
-            });
+            .catch(error => console.error("Error validating business name:", error));
     }
 
     function checkFormValidity() {
