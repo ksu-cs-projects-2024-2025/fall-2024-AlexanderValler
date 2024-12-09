@@ -1,6 +1,4 @@
-﻿using BlockOut.Models;
-
-namespace BlockOut.Models
+﻿namespace BlockOut.Models
 {
     public class Calendar
     {
@@ -10,17 +8,17 @@ namespace BlockOut.Models
         public string Data { get; set; } // Serialized calendar data
 
         // Link to Business
-        public string BusinessId { get; set; }
-        public Business Business { get; set; }
-
-        // Users tied to this calendar
-        public List<UserBusinessCalendar> UserBusinessCalendars { get; set; } = new List<UserBusinessCalendar>();
-
+        public string? BusinessId { get; set; }
+        public Business? Business { get; set; }
 
         // Availability and Preferences
         public string? AvailabilityUserId { get; set; }
         public ApplicationUser? AvailabilityUser { get; set; }
         public string? PreferencesUserId { get; set; }
         public ApplicationUser? PreferencesUser { get; set; }
+
+
+        // Many-to-Many with Users
+        public List<UserBusinessCalendar> UserBusinessCalendars { get; set; } = new List<UserBusinessCalendar>();
     }
 }

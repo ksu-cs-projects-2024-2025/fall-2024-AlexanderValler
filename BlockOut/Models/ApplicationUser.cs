@@ -8,8 +8,12 @@ namespace BlockOut.Models
         public string? JobTitle { get; set; }
         public int? ProfilePictureId { get; set; }
 
-        public Calendar? PreferencesCalendar { get; set; }
+        public string? AvailabilityCalendarId { get; set; }
         public Calendar? AvailabilityCalendar { get; set; }
+
+        public string? PreferencesCalendarId { get; set; }
+        public Calendar? PreferencesCalendar { get; set; }
+
         // Relationships for Business Roles
         public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
 

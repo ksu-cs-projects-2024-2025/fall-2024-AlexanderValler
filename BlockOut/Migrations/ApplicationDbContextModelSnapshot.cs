@@ -25,6 +25,9 @@ namespace BlockOut.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AvailabilityCalendarId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
@@ -61,6 +64,9 @@ namespace BlockOut.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("PreferencesCalendarId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("ProfilePictureId")
                         .HasColumnType("INTEGER");
@@ -110,7 +116,6 @@ namespace BlockOut.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("BusinessId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
@@ -203,19 +208,22 @@ namespace BlockOut.Migrations
             modelBuilder.Entity("BlockOut.Models.UserBusinessCalendar", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("BusinessId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("CalendarId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnOrder(1);
+
+                    b.Property<string>("BusinessId")
+                        .HasColumnType("TEXT")
+                        .HasColumnOrder(2);
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.HasKey("UserId", "BusinessId", "CalendarId");
+                    b.HasKey("UserId", "CalendarId", "BusinessId");
 
                     b.HasIndex("BusinessId");
 
@@ -391,8 +399,7 @@ namespace BlockOut.Migrations
                     b.HasOne("BlockOut.Models.Business", "Business")
                         .WithMany("Calendars")
                         .HasForeignKey("BusinessId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("BlockOut.Models.ApplicationUser", "PreferencesUser")
                         .WithOne("PreferencesCalendar")

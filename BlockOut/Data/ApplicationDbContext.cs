@@ -20,17 +20,18 @@ namespace BlockOut.Data
         {
             base.OnModelCreating(modelBuilder); // Required to configure ASP.NET Identity tables
 
-            // Configure the AvailabilityCalendar and PreferencesCalendar relationships for ApplicationUser
+            // Configure AvailabilityCalendar relationship
             modelBuilder.Entity<ApplicationUser>()
                 .HasOne(u => u.AvailabilityCalendar)
                 .WithOne(c => c.AvailabilityUser)
-                .HasForeignKey<Calendar>(c => c.AvailabilityUserId)
+                .HasForeignKey<ApplicationUser>(u => u.AvailabilityCalendarId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // Configure PreferencesCalendar relationship
             modelBuilder.Entity<ApplicationUser>()
                 .HasOne(u => u.PreferencesCalendar)
                 .WithOne(c => c.PreferencesUser)
-                .HasForeignKey<Calendar>(c => c.PreferencesUserId)
+                .HasForeignKey<ApplicationUser>(u => u.PreferencesCalendarId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Configure many-to-many relationship for UserBusinessRole
@@ -68,16 +69,22 @@ namespace BlockOut.Data
                 .HasForeignKey(oh => oh.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Configure the relationship between Calendar and Business
+            // Ensure the Calendar side reflects the same relationship
             modelBuilder.Entity<Calendar>()
-                .HasOne(c => c.Business)
-                .WithMany(b => b.Calendars)
-                .HasForeignKey(c => c.BusinessId)
-                .OnDelete(DeleteBehavior.Cascade); // Optional: Set cascading delete
+                .HasOne(c => c.AvailabilityUser)
+                .WithOne(u => u.AvailabilityCalendar)
+                .HasForeignKey<Calendar>(c => c.AvailabilityUserId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            // Configure many-to-many relationship for UserBusinessCalendar
+            modelBuilder.Entity<Calendar>()
+                .HasOne(c => c.PreferencesUser)
+                .WithOne(u => u.PreferencesCalendar)
+                .HasForeignKey<Calendar>(c => c.PreferencesUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Composite key for UserBusinessCalendar
             modelBuilder.Entity<UserBusinessCalendar>()
-                .HasKey(ubc => new { ubc.UserId, ubc.BusinessId, ubc.CalendarId }); // Composite key for uniqueness
+                .HasKey(ubc => new { ubc.UserId, ubc.CalendarId, ubc.BusinessId });
 
             modelBuilder.Entity<UserBusinessCalendar>()
                 .HasOne(ubc => ubc.User)
@@ -86,15 +93,15 @@ namespace BlockOut.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<UserBusinessCalendar>()
-                .HasOne(ubc => ubc.Business)
-                .WithMany(b => b.UserBusinessCalendars)
-                .HasForeignKey(ubc => ubc.BusinessId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<UserBusinessCalendar>()
                 .HasOne(ubc => ubc.Calendar)
                 .WithMany(c => c.UserBusinessCalendars)
                 .HasForeignKey(ubc => ubc.CalendarId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserBusinessCalendar>()
+                .HasOne(ubc => ubc.Business)
+                .WithMany(b => b.UserBusinessCalendars)
+                .HasForeignKey(ubc => ubc.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
