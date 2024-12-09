@@ -34,6 +34,7 @@ namespace BlockOut.Pages.Businesses
 
         public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize OpenHours with default values
             Business.OpenHours = Enumerable.Range(1, 7).Select(day => new OpenHours
             {
                 Day = day,
@@ -49,14 +50,11 @@ namespace BlockOut.Pages.Businesses
 
         public async Task<IActionResult> OnPostAsync()
         {
-            Console.WriteLine("OnPostAsync triggered");
-
+            // Ensure a unique Business.Id is generated
             if (string.IsNullOrEmpty(Business.Id))
             {
                 Business.Id = GenerateUniqueBusinessId();
-                Console.WriteLine($"Generated Business Id: {Business.Id}");
             }
-
             ConflictingBusinessNameMessage ??= string.Empty;
 
             ModelState.Remove("Business.Id");
@@ -64,22 +62,30 @@ namespace BlockOut.Pages.Businesses
 
             if (!ModelState.IsValid)
             {
-                foreach (var key in ModelState.Keys)
-                {
-                    var state = ModelState[key];
-                    foreach (var error in state.Errors)
-                    {
-                        Console.WriteLine($"Key: {key}, Error: {error.ErrorMessage}");
-                    }
-                }
                 return Page();
             }
 
-            foreach (var openHour in Business.OpenHours)
+            // Initialize OpenHours for the business
+            if (Business.OpenHours == null || Business.OpenHours.Count != 7)
             {
-                openHour.BusinessId = Business.Id;
+                Business.OpenHours = Enumerable.Range(1, 7).Select(day => new OpenHours
+                {
+                    Day = day,
+                    IsClosed = true,
+                    OpenTime = null,
+                    CloseTime = null,
+                    BusinessId = Business.Id
+                }).ToList();
+            }
+            else
+            {
+                foreach (var openHour in Business.OpenHours)
+                {
+                    openHour.BusinessId = Business.Id;
+                }
             }
 
+            // Fetch the current user and add as owner
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
@@ -98,9 +104,9 @@ namespace BlockOut.Pages.Businesses
 
             try
             {
+                // Save the Business and associated OpenHours
                 _context.Businesses.Add(Business);
                 await _context.SaveChangesAsync();
-                Console.WriteLine("Business created successfully.");
             }
             catch (Exception ex)
             {

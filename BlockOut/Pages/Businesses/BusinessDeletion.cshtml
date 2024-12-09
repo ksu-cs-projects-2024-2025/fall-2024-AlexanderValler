@@ -1,0 +1,42 @@
+﻿@page "{businessId}"
+@model BlockOut.Pages.Businesses.BusinessDeletionModel
+@{
+    ViewData["Title"] = "Business Deletion";
+}
+
+<h1 class="text-center">Business Deletion</h1>
+
+<p class="text-center">This action cannot be undone and will permanently delete the business along with all associated data.</p>
+
+<div class="text-center mt-4">
+    <label for="confirm-delete">Type "DELETE" to confirm:</label>
+    <input type="text" id="confirm-delete" class="form-control mx-auto" style="width: 200px; text-transform: uppercase;" oninput="checkConfirmDelete()" />
+    <button id="delete-business-button" class="btn btn-danger mt-3" onclick="deleteBusiness()" disabled>Delete Business</button>
+</div>
+
+<script>
+    function checkConfirmDelete() {
+        const confirmInput = document.getElementById("confirm-delete");
+        const deleteButton = document.getElementById("delete-business-button");
+        deleteButton.disabled = confirmInput.value.trim().toUpperCase() !== "DELETE";
+    }
+
+    function deleteBusiness() {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const businessId = "@Model.BusinessId";
+
+        fetch(`/Businesses/BusinessDeletion?handler=DeleteBusiness&businessId=${businessId}`, {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': token
+            }
+        }).then(response => {
+            if (response.ok) {
+                // Redirect to the dashboard or homepage after deletion
+                window.location.href = "/Dashboard";
+            } else {
+                alert("There was an error deleting the business. Please try again.");
+            }
+        }).catch(error => console.error('Error:', error));
+    }
+</script>

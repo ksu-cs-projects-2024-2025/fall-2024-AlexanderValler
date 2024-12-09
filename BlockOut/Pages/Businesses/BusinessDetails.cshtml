@@ -10,7 +10,7 @@
 
 @if (Model.IsOwnerOrManager)
 {
-    <button id="edit-business-name-button" class="btn-link text-primary" onclick="toggleEditMode()" style="border: none; background: none;">Edit</button>
+        <button id="edit-business-name-button" class="btn-link text-primary" onclick="toggleEditMode()" style="border: none; background: none;">Edit</button>
 }
 
 <div id="business-name-edit-container" class="d-none">
@@ -28,36 +28,84 @@
         <h4>Calendars</h4>
         @if (Model.Calendars != null && Model.Calendars.Any())
         {
-            <ul class="list-group">
+                <ul class="list-group">
                 @foreach (var calendar in Model.Calendars)
                 {
-                    <li class="list-group-item">
-                        <h5>@calendar.Name</h5>
-                        <p>Participants: @string.Join(", ", calendar.UserBusinessCalendars.Select(ubc => ubc.User.UserName))</p>
-                        <a asp-page="/Calendars/View" asp-route-calendarId="@calendar.Id" class="text-primary">View Calendar</a>
-                    </li>
+                            <li class="list-group-item">
+                                <h5>@calendar.Name</h5>
+                                <p>Participants: @string.Join(", ", calendar.UserBusinessCalendars.Select(ubc => ubc.User.UserName))</p>
+                                <a asp-page="/Calendars/View" asp-route-calendarId="@calendar.Id" class="text-primary">View Calendar</a>
+                            </li>
                 }
-            </ul>
+                </ul>
         }
         else
         {
-            <p>No calendars available.</p>
+                <p>No calendars available.</p>
         }
     </div>
 
-    <!-- Right Column: Users in Business -->
+    <!-- Right Column: Business Open Hours and Users -->
     <div class="col-md-4">
-        <h4>Users in Business</h4>
+        <h4>Open Hours</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Open</th>
+                    <th>Close</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.DaysOfWeek.Length; i++)
+                {
+                    var dayHours = Model.Business.OpenHours.FirstOrDefault(oh => oh.Day == i + 1);
+                    <tr>
+                        <td>@Model.DaysOfWeek[i]</td>
+                        <td>
+                            @if (dayHours == null)
+                            {
+                                    <span class="text-danger">Data Missing</span>
+                            }
+                            else if (dayHours.IsClosed || !dayHours.OpenTime.HasValue)
+                            {
+                                    <span>Closed</span>
+                            }
+                            else
+                            {
+                                    <span>@dayHours.OpenTime.Value.ToString("hh\\:mm")</span>
+                            }
+                        </td>
+                        <td>
+                            @if (dayHours == null)
+                            {
+                                    <span class="text-danger">Data Missing</span>
+                            }
+                            else if (dayHours.IsClosed || !dayHours.CloseTime.HasValue)
+                            {
+                                    <span>Closed</span>
+                            }
+                            else
+                            {
+                                    <span>@dayHours.CloseTime.Value.ToString("hh\\:mm")</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <h4>Users</h4>
         <ul class="list-group">
             <li class="list-group-item">
                 <strong>Owners</strong>
                 <ul>
                     @foreach (var userRole in Model.UserBusinessRoles.Where(ubr => ubr.Role == "Owner"))
                     {
-                        <li>
-                            <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                            <li>
+                                <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
                             @userRole.User.UserName
-                        </li>
+                            </li>
                     }
                 </ul>
             </li>
@@ -66,10 +114,10 @@
                 <ul>
                     @foreach (var userRole in Model.UserBusinessRoles.Where(ubr => ubr.Role == "Manager"))
                     {
-                        <li>
-                            <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                            <li>
+                                <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
                             @userRole.User.UserName
-                        </li>
+                            </li>
                     }
                 </ul>
             </li>
@@ -78,10 +126,10 @@
                 <ul>
                     @foreach (var userRole in Model.UserBusinessRoles.Where(ubr => ubr.Role == "Employee"))
                     {
-                        <li>
-                            <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                            <li>
+                                <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 32px; height: 32px;" />
                             @userRole.User.UserName
-                        </li>
+                            </li>
                     }
                 </ul>
             </li>
@@ -89,10 +137,18 @@
 
         @if (Model.IsOwnerOrManager)
         {
-            <button class="btn btn-primary mt-3" onclick="window.location.href='/Businesses/ManageEmployees?businessId=@Model.EncodedBusinessId'">Manage Employees</button>
+                <button class="btn btn-primary mt-3" onclick="window.location.href='/Businesses/ManageEmployees?businessId=@Model.EncodedBusinessId'">Manage Employees</button>
         }
     </div>
 </div>
+
+<!-- Delete Business Section -->
+@if (Model.IsOwner)
+{
+        <div class="text-center mt-4">
+            <a href="/Businesses/BusinessDeletion/@Model.EncodedBusinessId" class="text-danger">Delete Business</a>
+        </div>
+}
 
 
 <script>

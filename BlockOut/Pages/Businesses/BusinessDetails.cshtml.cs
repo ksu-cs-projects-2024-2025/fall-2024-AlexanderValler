@@ -37,7 +37,11 @@ namespace BlockOut.Pages.Businesses
         public List<UserBusinessRole> UserBusinessRoles { get; set; } = new List<UserBusinessRole>();
         public List<Calendar> Calendars { get; set; } = new List<Calendar>();
 
+        public bool IsOwner { get; set; } = false;
         public bool IsOwnerOrManager { get; set; } = false;
+
+        // Days of the week for display
+        public string[] DaysOfWeek { get; } = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
         public async Task<IActionResult> OnGetAsync(string businessId)
         {
@@ -63,12 +67,14 @@ namespace BlockOut.Pages.Businesses
                 HttpContext.Session.SetString("CurrentBusinessId", businessId);
             }
 
+            // Load the business with all its relationships
             Business = await _context.Businesses
                 .Include(b => b.UserBusinessRoles)
                 .ThenInclude(ubr => ubr.User)
                 .Include(b => b.Calendars)
                 .ThenInclude(c => c.UserBusinessCalendars)
                 .ThenInclude(ubc => ubc.User)
+                .Include(b => b.OpenHours) // Ensure OpenHours is included
                 .FirstOrDefaultAsync(b => b.Id == businessId);
 
             if (Business == null)
@@ -82,9 +88,32 @@ namespace BlockOut.Pages.Businesses
             IsOwnerOrManager = UserBusinessRoles.Any(ubr =>
                 ubr.UserId == user.Id && (ubr.Role == "Owner" || ubr.Role == "Manager"));
 
+            IsOwner = UserBusinessRoles.Any(ubr => ubr.UserId == user.Id && ubr.Role == "Owner");
+
             Calendars = IsOwnerOrManager
                 ? Business.Calendars
                 : Business.Calendars.Where(c => c.UserBusinessCalendars.Any(ubc => ubc.UserId == user.Id)).ToList();
+
+            // Handle missing OpenHours entries
+            if (Business.OpenHours == null || Business.OpenHours.Count != 7)
+            {
+                var existingDays = Business.OpenHours?.Select(oh => oh.Day).ToHashSet() ?? new HashSet<int>();
+                var missingDays = Enumerable.Range(1, 7).Except(existingDays);
+
+                foreach (var day in missingDays)
+                {
+                    Business.OpenHours.Add(new OpenHours
+                    {
+                        Day = day,
+                        IsClosed = true,
+                        OpenTime = null,
+                        CloseTime = null,
+                        BusinessId = Business.Id
+                    });
+                }
+
+                await _context.SaveChangesAsync(); // Save any newly added OpenHours
+            }
 
             EncodedBusinessId = EncodeBusinessId(businessId);
 
