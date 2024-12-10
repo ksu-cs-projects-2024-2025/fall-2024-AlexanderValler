@@ -6,6 +6,7 @@ using BlockOut.Data;
 using BlockOut.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace BlockOut.Pages
 {
@@ -135,9 +136,18 @@ namespace BlockOut.Pages
         private string DecodeBusinessId(string encodedId)
         {
             char[] charArray = encodedId.ToCharArray();
-            Array.Reverse(charArray);
-            var bytes = Convert.FromBase64String(new string(charArray));
-            return System.Text.Encoding.UTF8.GetString(bytes);
+            Array.Reverse(charArray); // Reverse the encoded ID
+            var base64 = new string(charArray)
+                .Replace("-", "+")
+                .Replace("_", "/");
+            switch (base64.Length % 4) // Add padding if needed
+            {
+                case 2: base64 += "=="; break;
+                case 3: base64 += "="; break;
+            }
+            var bytes = Convert.FromBase64String(base64);
+            return Encoding.UTF8.GetString(bytes);
         }
+
     }
 }

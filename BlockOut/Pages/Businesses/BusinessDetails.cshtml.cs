@@ -47,11 +47,7 @@ namespace BlockOut.Pages.Businesses
         {
             if (string.IsNullOrWhiteSpace(businessId))
             {
-                businessId = HttpContext.Session.GetString("CurrentBusinessId");
-                if (string.IsNullOrWhiteSpace(businessId))
-                {
-                    return NotFound("Business ID is required.");
-                }
+                return NotFound("Business ID is required.");
             }
             else
             {
@@ -220,19 +216,37 @@ namespace BlockOut.Pages.Businesses
         private string EncodeBusinessId(string businessId)
         {
             var bytes = Encoding.UTF8.GetBytes(businessId);
-            var base64 = Convert.ToBase64String(bytes);
+            var base64 = Convert.ToBase64String(bytes)
+                .Replace("=", "") // Remove padding
+                .Replace("+", "-") // Replace URL-unsafe characters
+                .Replace("/", "_"); // Replace URL-unsafe characters
+
             char[] charArray = base64.ToCharArray();
-            Array.Reverse(charArray);
+            Array.Reverse(charArray); // Reverse for added obfuscation
             return new string(charArray);
         }
+
 
         private string DecodeBusinessId(string encodedId)
         {
             char[] charArray = encodedId.ToCharArray();
-            Array.Reverse(charArray);
-            var bytes = Convert.FromBase64String(new string(charArray));
+            Array.Reverse(charArray); // Reverse to original Base64
+
+            var base64 = new string(charArray)
+                .Replace("-", "+") // Restore Base64 characters
+                .Replace("_", "/"); // Restore Base64 characters
+
+            // Add padding if missing
+            switch (base64.Length % 4)
+            {
+                case 2: base64 += "=="; break;
+                case 3: base64 += "="; break;
+            }
+
+            var bytes = Convert.FromBase64String(base64);
             return Encoding.UTF8.GetString(bytes);
         }
+
 
         private string NormalizeBusinessName(string name)
         {

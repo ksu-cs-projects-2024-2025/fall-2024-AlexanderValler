@@ -169,8 +169,8 @@
         </ul>
 
         @if (Model.IsOwnerOrManager)
-        {
-                <button class="btn btn-primary mt-3" onclick="window.location.href='/Businesses/ManageEmployees?businessId=@Model.EncodedBusinessId'">Manage Employees</button>
+        { 
+            <a href="/Businesses/ManageEmployees/@Model.EncodedBusinessId" class="btn btn-primary">Manage Employees</a>
         }
     </div>
 </div>
@@ -178,11 +178,10 @@
 <!-- Delete Business Section -->
 @if (Model.IsOwner)
 {
-        <div class="text-center mt-4">
-            <a href="/Businesses/BusinessDeletion/@Model.EncodedBusinessId" class="text-danger">Delete Business</a>
-        </div>
+    <div class="text-center mt-4">
+        <a href="/Businesses/BusinessDeletion/@Model.EncodedBusinessId" class="btn btn-danger">Delete Business</a>
+    </div>
 }
-
 
 <script>
     function toggleEditMode() {

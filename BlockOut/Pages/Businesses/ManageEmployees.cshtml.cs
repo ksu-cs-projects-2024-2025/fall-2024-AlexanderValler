@@ -69,9 +69,21 @@ namespace BlockOut.Pages.Businesses
             IsOwner = userRole.Role == "Owner";
             IsManagerOrOwner = IsOwner || userRole.Role == "Manager";
 
-            OwnerRoles = business.UserBusinessRoles.Where(ubr => ubr.Role == "Owner").ToList();
-            ManagerRoles = business.UserBusinessRoles.Where(ubr => ubr.Role == "Manager").ToList();
-            EmployeeRoles = business.UserBusinessRoles.Where(ubr => ubr.Role == "Employee").ToList();
+            // Fetch roles explicitly with correct casing
+            OwnerRoles = await _context.UserBusinessRoles
+                .Where(ubr => ubr.BusinessId == BusinessId && ubr.Role == "Owner")
+                .Include(ubr => ubr.User)
+                .ToListAsync();
+
+            ManagerRoles = await _context.UserBusinessRoles
+                .Where(ubr => ubr.BusinessId == BusinessId && ubr.Role == "Manager")
+                .Include(ubr => ubr.User)
+                .ToListAsync();
+
+            EmployeeRoles = await _context.UserBusinessRoles
+                .Where(ubr => ubr.BusinessId == BusinessId && ubr.Role == "Employee")
+                .Include(ubr => ubr.User)
+                .ToListAsync();
 
             InviteCode = EncodeInviteCode(BusinessId);
             return Page();
@@ -101,35 +113,83 @@ namespace BlockOut.Pages.Businesses
 
             var targetRole = business.UserBusinessRoles.FirstOrDefault(ubr => ubr.UserId == model.UserId);
 
+            if (targetRole == null)
+            {
+                return NotFound("Target user role not found.");
+            }
+
+            // Ensure there is always at least one owner
+            if (targetRole.Role == "Owner" && model.Role != "Owner")
+            {
+                var ownersCount = business.UserBusinessRoles.Count(ubr => ubr.Role == "Owner");
+                if (ownersCount <= 1)
+                {
+                    return BadRequest("There must always be at least one owner.");
+                }
+            }
+
             if (model.Role == "remove")
             {
                 _context.UserBusinessRoles.Remove(targetRole);
             }
-            else if (targetRole != null)
+            else
             {
                 targetRole.Role = model.Role;
                 _context.UserBusinessRoles.Update(targetRole);
             }
 
             await _context.SaveChangesAsync();
+
+            // Reload roles to reflect changes properly
+            await ReloadRolesAsync(business.Id);
+
             return new JsonResult(new { success = true });
+        }
+
+        private async Task ReloadRolesAsync(string businessId)
+        {
+            OwnerRoles = await _context.UserBusinessRoles
+                .Where(ubr => ubr.BusinessId == businessId && ubr.Role == "Owner")
+                .Include(ubr => ubr.User)
+                .ToListAsync();
+
+            ManagerRoles = await _context.UserBusinessRoles
+                .Where(ubr => ubr.BusinessId == businessId && ubr.Role == "Manager")
+                .Include(ubr => ubr.User)
+                .ToListAsync();
+
+            EmployeeRoles = await _context.UserBusinessRoles
+                .Where(ubr => ubr.BusinessId == businessId && ubr.Role == "Employee")
+                .Include(ubr => ubr.User)
+                .ToListAsync();
         }
 
         private string EncodeInviteCode(string businessId)
         {
             var bytes = Encoding.UTF8.GetBytes(businessId);
-            return Convert.ToBase64String(bytes).Replace("=", "").Replace("+", "-").Replace("/", "_");
+            return Convert.ToBase64String(bytes)
+                .Replace("=", "") // Remove padding
+                .Replace("+", "-") // Replace URL-unsafe characters
+                .Replace("/", "_"); // Replace URL-unsafe characters
         }
 
         private string DecodeBusinessId(string encodedId)
         {
-            var encoded = encodedId.Replace("-", "+").Replace("_", "/");
-            while (encoded.Length % 4 != 0)
+            char[] charArray = encodedId.ToCharArray();
+            Array.Reverse(charArray); // Reverse to original Base64
+
+            var base64 = new string(charArray)
+                .Replace("-", "+") // Restore Base64 characters
+                .Replace("_", "/"); // Restore Base64 characters
+
+            // Add padding if missing
+            switch (base64.Length % 4)
             {
-                encoded += "=";
+                case 2: base64 += "=="; break;
+                case 3: base64 += "="; break;
             }
 
-            var bytes = Convert.FromBase64String(encoded);
+            var bytes = Convert.FromBase64String(base64);
             return Encoding.UTF8.GetString(bytes);
         }
 

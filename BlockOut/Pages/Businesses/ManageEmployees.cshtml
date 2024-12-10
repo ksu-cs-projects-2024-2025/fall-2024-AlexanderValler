@@ -17,7 +17,7 @@
                     <span>@userRole.User.UserName</span>
                     @if (Model.IsOwner)
                     {
-                        <button class="btn btn-sm btn-danger ms-auto" onclick="changeRole('@userRole.UserId', 'remove')">Remove</button>
+                        <button class="btn btn-sm btn-danger ms-auto" onclick="changeRole('@userRole.UserId', 'remove')" hidden>Remove</button>
                     }
                 </li>
             }
@@ -32,7 +32,10 @@
                 <li class="list-group-item d-flex align-items-center">
                     <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 40px; height: 40px;" />
                     <span>@userRole.User.UserName</span>
-                    <button class="btn btn-sm btn-primary ms-auto" onclick="changeRole('@userRole.UserId', 'employee')">Make Employee</button>
+                    @if (Model.IsOwner)
+                    {
+                        <button class="btn btn-sm btn-primary ms-auto" onclick="changeRole('@userRole.UserId', 'Employee')">Make Employee</button>
+                    }
                     @if (Model.IsOwner)
                     {
                         <button class="btn btn-sm btn-danger ms-2" onclick="changeRole('@userRole.UserId', 'remove')">Remove</button>
@@ -52,7 +55,7 @@
                     <span>@userRole.User.UserName</span>
                     @if (Model.IsManagerOrOwner)
                     {
-                        <button class="btn btn-sm btn-primary ms-auto" onclick="changeRole('@userRole.UserId', 'manager')">Make Manager</button>
+                        <button class="btn btn-sm btn-primary ms-auto" onclick="changeRole('@userRole.UserId', 'Manager')">Make Manager</button>
                     }
                     @if (Model.IsOwner)
                     {
@@ -81,9 +84,7 @@
             body: JSON.stringify({ userId, role, businessId: '@Model.BusinessId' })
         }).then(response => {
             if (response.ok) {
-                window.location.reload();
-            } else {
-                alert('Failed to change role. Please try again.');
+                window.location.reload(); // Reload to update UI
             }
         });
     }
