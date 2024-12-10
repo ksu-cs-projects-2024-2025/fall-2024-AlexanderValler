@@ -213,6 +213,44 @@ namespace BlockOut.Pages.Businesses
         }
 
 
+        public async Task<IActionResult> OnPostEditBusinessNameAsync([FromBody] BusinessNameUpdateModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model?.Name) || string.IsNullOrWhiteSpace(model.Id))
+            {
+                return BadRequest(new { success = false, message = "Business name or ID cannot be empty." });
+            }
+
+            var business = await _context.Businesses.FirstOrDefaultAsync(b => b.Id == model.Id);
+            if (business == null)
+            {
+                return NotFound(new { success = false, message = "Business not found." });
+            }
+
+            var allBusinesses = await _context.Businesses
+                .Where(b => b.Id != model.Id)
+                .ToListAsync();
+
+            var normalizedNewName = NormalizeBusinessName(model.Name);
+            if (allBusinesses.Any(b => NormalizeBusinessName(b.Name) == normalizedNewName))
+            {
+                return BadRequest(new { success = false, message = "The business name is too similar to an existing one." });
+            }
+
+            business.Name = model.Name;
+            await _context.SaveChangesAsync();
+
+            return new JsonResult(new { success = true });
+        }
+
+
+        public class BusinessNameUpdateModel
+        {
+            public string Id { get; set; }
+            public string Name { get; set; }
+        }
+
+
+
         private string EncodeBusinessId(string businessId)
         {
             var bytes = Encoding.UTF8.GetBytes(businessId);
