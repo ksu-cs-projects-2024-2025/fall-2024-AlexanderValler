@@ -37,7 +37,7 @@ namespace BlockOut.Pages.Businesses
             // Initialize OpenHours with default values
             Business.OpenHours = Enumerable.Range(1, 7).Select(day => new OpenHours
             {
-                Day = day,
+                Day = day, // Assign the correct day number
                 OpenTime = new TimeSpan(9, 0, 0),
                 CloseTime = new TimeSpan(17, 0, 0),
                 IsClosed = false
@@ -65,24 +65,11 @@ namespace BlockOut.Pages.Businesses
                 return Page();
             }
 
-            // Initialize OpenHours for the business
-            if (Business.OpenHours == null || Business.OpenHours.Count != 7)
+            // Assign the correct `Day` values to `OpenHours`
+            for (int i = 0; i < Business.OpenHours.Count; i++)
             {
-                Business.OpenHours = Enumerable.Range(1, 7).Select(day => new OpenHours
-                {
-                    Day = day,
-                    IsClosed = true,
-                    OpenTime = null,
-                    CloseTime = null,
-                    BusinessId = Business.Id
-                }).ToList();
-            }
-            else
-            {
-                foreach (var openHour in Business.OpenHours)
-                {
-                    openHour.BusinessId = Business.Id;
-                }
+                Business.OpenHours[i].Day = i + 1; // Day starts from 1 (Sunday) to 7 (Saturday)
+                Business.OpenHours[i].BusinessId = Business.Id; // Ensure BusinessId is assigned
             }
 
             // Fetch the current user and add as owner
