@@ -10,6 +10,9 @@
     <form method="post">
         @Html.AntiForgeryToken()
 
+        <input type="hidden" name="SelectedShiftId" value="@Model.SelectedShiftId" />
+        <input type="hidden" name="CalendarId" value="@Model.CalendarId" />
+
         <!-- Calendar Name -->
         <div class="mb-3">
             <label for="calendarName" class="form-label">Calendar Name</label>

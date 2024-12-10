@@ -20,6 +20,14 @@ namespace BlockOut.Pages.Calendars
             _context = context;
         }
 
+        [BindProperty(SupportsGet = true)]
+        public string SelectedShiftId { get; set; }
+
+        [BindProperty]
+        public List<string> SelectedParticipants { get; set; }
+
+        public string CalendarId { get; set; }
+
         [BindProperty]
         public string CalendarName { get; set; }
 
@@ -83,9 +91,9 @@ namespace BlockOut.Pages.Calendars
 
             if (selectedShifts != null && selectedShifts.Any())
             {
-                foreach (var shiftId in selectedShifts)
+                foreach (var selectedShiftId in selectedShifts)
                 {
-                    var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == int.Parse(shiftId));
+                    var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == int.Parse(selectedShiftId));
                     if (shift != null)
                     {
                         shift.CalendarId = newCalendar.Id;
@@ -93,6 +101,51 @@ namespace BlockOut.Pages.Calendars
                 }
             }
 
+            if (!int.TryParse(SelectedShiftId, out var shiftId))
+            {
+                ModelState.AddModelError("", "Invalid shift ID.");
+                return Page();
+            }
+
+            var selectedShift = await _context.Shifts
+                .Include(s => s.HourlyRequirements)
+                .FirstOrDefaultAsync(s => s.Id == shiftId);
+
+            if (selectedShift == null)
+            {
+                ModelState.AddModelError("", "Selected shift not found.");
+                return Page();
+            }
+
+            var scheduleEntries = new List<ScheduleEntry>();
+            var participants = await _context.Users
+                .Where(u => SelectedParticipants.Contains(u.Id))
+                .ToListAsync();
+
+            foreach (var hourRequirement in selectedShift.HourlyRequirements)
+            {
+                var startTime = hourRequirement.HourStartTime;
+                var endTime = hourRequirement.HourEndTime;
+
+                var assignedParticipants = participants
+                    .Take(hourRequirement.MinWorkers)
+                    .ToList();
+
+                foreach (var participant in assignedParticipants)
+                {
+                    scheduleEntries.Add(new ScheduleEntry
+                    {
+                        CalendarId = newCalendar.Id,
+                        ParticipantId = participant.Id,
+                        StartTime = startTime,
+                        EndTime = endTime
+                    });
+                }
+
+                participants = participants.Skip(hourRequirement.MinWorkers).Concat(assignedParticipants).ToList();
+            }
+
+            _context.ScheduleEntries.AddRange(scheduleEntries);
             _context.Calendars.Add(newCalendar);
             await _context.SaveChangesAsync();
 

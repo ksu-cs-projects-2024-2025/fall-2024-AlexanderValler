@@ -23,6 +23,8 @@ namespace BlockOut.Data
         public DbSet<UserBusinessCalendar> UserBusinessCalendars { get; set; }
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<ShiftHourRequirement> ShiftHourRequirements { get; set; }
+        public DbSet<ScheduleEntry> ScheduleEntries { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

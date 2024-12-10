@@ -34,11 +34,8 @@
                     <li class="list-group-item">
                         <h5>@calendar.Name</h5>
                         <p>Participants: @string.Join(", ", calendar.UserBusinessCalendars.Select(ubc => ubc.User.UserName))</p>
-                        <a asp-page="/Calendars/View" asp-route-calendarId="@calendar.Id" class="text-primary">View Calendar</a>
-                        @if (Model.IsOwnerOrManager)
-                        {
-                            <button class="btn btn-link text-danger" onclick="removeCalendar('@calendar.Id')">Remove</button>
-                        }
+                        <!-- Redirect "View Calendar" to Testing.cshtml -->
+                        <a href="/Creations/Testing" class="btn btn-primary">View Calendar</a>
                     </li>
                 }
             </ul>
@@ -372,7 +369,6 @@
             },
             body: JSON.stringify({ CalendarId: calendarId }) // Matches RemoveCalendarRequest
         })
-
             .then(response => {
                 if (response.ok) {
                     location.reload(); // Reload the page to reflect the updated state
