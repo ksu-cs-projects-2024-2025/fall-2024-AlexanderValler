@@ -13,23 +13,67 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">@userBusiness.Name</h5>
-
                     <p class="card-text">
                         <span class="badge bg-primary">@userBusiness.Role</span>
                     </p>
-
                     <a asp-page="/Businesses/BusinessDetails" asp-route-businessId="@userBusiness.EncodedBusinessId" class="btn btn-primary">Manage</a>
                 </div>
             </div>
         </div>
     }
-
-    <div class="col-md-4 mb-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">Create New Business</h5>
-                <a href="/Businesses/CreateBusiness" class="btn btn-success">+ Create New Business</a>
-            </div>
-        </div>
-    </div>
 </div>
+
+<hr class="my-4" />
+
+<!-- New Section for Joining/Creating a Business -->
+<div class="text-center mt-5">
+    <h3>Join Business</h3>
+    <div class="input-group mt-3" style="max-width: 500px; margin: 0 auto;">
+        <input type="text" id="join-code" class="form-control" placeholder="Enter Business ID" aria-label="Join Code" />
+        <button class="btn btn-primary" onclick="joinBusiness()">Enter</button>
+    </div>
+    <div id="join-error" class="text-danger mt-2" style="display: none;">You are already in that business</div>
+</div>
+
+<div class="text-center mt-5">
+    <h3>Create New Business</h3>
+    <a href="/Businesses/CreateBusiness" class="btn btn-success mt-2">+ Create New Business</a>
+</div>
+
+<script>
+    function joinBusiness() {
+        const joinCodeInput = document.getElementById("join-code").value.trim();
+        const errorDiv = document.getElementById("join-error");
+        errorDiv.style.display = "none"; // Hide the error initially
+
+        if (!joinCodeInput) {
+            errorDiv.textContent = "Business ID cannot be empty.";
+            errorDiv.style.display = "block";
+            return;
+        }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        fetch('/Dashboard?handler=JoinBusiness', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            },
+            body: JSON.stringify({ BusinessId: joinCodeInput })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    errorDiv.textContent = data.message || "Failed to join the business. Please try again.";
+                    errorDiv.style.display = "block";
+                }
+            })
+            .catch(error => {
+                errorDiv.textContent = "An unexpected error occurred. Please try again.";
+                errorDiv.style.display = "block";
+                console.error(error);
+            });
+    }
+</script>

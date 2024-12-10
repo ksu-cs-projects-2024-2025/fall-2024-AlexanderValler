@@ -6,7 +6,6 @@ using BlockOut.Data;
 using BlockOut.Models;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BlockOut.Pages.Businesses
@@ -69,7 +68,6 @@ namespace BlockOut.Pages.Businesses
             IsOwner = userRole.Role == "Owner";
             IsManagerOrOwner = IsOwner || userRole.Role == "Manager";
 
-            // Fetch roles explicitly with correct casing
             OwnerRoles = await _context.UserBusinessRoles
                 .Where(ubr => ubr.BusinessId == BusinessId && ubr.Role == "Owner")
                 .Include(ubr => ubr.User)
@@ -85,7 +83,7 @@ namespace BlockOut.Pages.Businesses
                 .Include(ubr => ubr.User)
                 .ToListAsync();
 
-            InviteCode = EncodeInviteCode(BusinessId);
+            InviteCode = BusinessId; // Return the raw business ID
             return Page();
         }
 
@@ -118,7 +116,6 @@ namespace BlockOut.Pages.Businesses
                 return NotFound("Target user role not found.");
             }
 
-            // Ensure there is always at least one owner
             if (targetRole.Role == "Owner" && model.Role != "Owner")
             {
                 var ownersCount = business.UserBusinessRoles.Count(ubr => ubr.Role == "Owner");
@@ -139,8 +136,6 @@ namespace BlockOut.Pages.Businesses
             }
 
             await _context.SaveChangesAsync();
-
-            // Reload roles to reflect changes properly
             await ReloadRolesAsync(business.Id);
 
             return new JsonResult(new { success = true });
@@ -164,25 +159,15 @@ namespace BlockOut.Pages.Businesses
                 .ToListAsync();
         }
 
-        private string EncodeInviteCode(string businessId)
-        {
-            var bytes = Encoding.UTF8.GetBytes(businessId);
-            return Convert.ToBase64String(bytes)
-                .Replace("=", "") // Remove padding
-                .Replace("+", "-") // Replace URL-unsafe characters
-                .Replace("/", "_"); // Replace URL-unsafe characters
-        }
-
         private string DecodeBusinessId(string encodedId)
         {
             char[] charArray = encodedId.ToCharArray();
-            Array.Reverse(charArray); // Reverse to original Base64
+            Array.Reverse(charArray);
 
             var base64 = new string(charArray)
-                .Replace("-", "+") // Restore Base64 characters
-                .Replace("_", "/"); // Restore Base64 characters
+                .Replace("-", "+")
+                .Replace("_", "/");
 
-            // Add padding if missing
             switch (base64.Length % 4)
             {
                 case 2: base64 += "=="; break;
@@ -190,7 +175,7 @@ namespace BlockOut.Pages.Businesses
             }
 
             var bytes = Convert.FromBase64String(base64);
-            return Encoding.UTF8.GetString(bytes);
+            return System.Text.Encoding.UTF8.GetString(bytes);
         }
 
         public class RoleChangeModel

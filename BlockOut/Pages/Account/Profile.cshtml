@@ -51,6 +51,33 @@
                     <button class="btn btn-primary btn-sm ms-2" id="name-button" onclick="toggleNameEdit(event)">Change</button>
                 </div>
 
+                <!-- Email Field -->
+                <div class="mb-3 d-flex align-items-center">
+                    <strong>Email:</strong>
+                    <div id="email-display" class="ms-2">@Model.Email</div>
+                    <input type="email" id="email-edit" class="form-control ms-2 d-none" value="@Model.Email" style="width: 300px;" />
+                    <button class="btn btn-primary btn-sm ms-2" id="email-button" onclick="toggleEmailEdit(event)">Change</button>
+                </div>
+
+                <!-- Change Password Button -->
+                <div class="mb-3">
+                    <a href="/Account/Reset" class="btn btn-secondary">Change Password</a>
+                </div>
+
+                <!-- List of Businesses -->
+                <div class="mt-4">
+                    <h4>Businesses</h4>
+                    <ul class="list-group">
+                        @foreach (var business in Model.Businesses)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                @business.Name  <span class="text-muted">@business.Role</span>
+                                <button class="btn btn-sm btn-danger" onclick="leaveBusiness('@business.Name')">Leave</button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+
                 <hr />
             </div>
         </div>
@@ -65,10 +92,8 @@
         const popup = document.getElementById("profile-popup");
         popup.classList.toggle("d-none");
 
-        // Remember original selection
         originalSelection = selectedProfilePicture;
 
-        // Close popup if clicking outside
         document.addEventListener("click", closePopupOnOutsideClick);
     }
 
@@ -79,8 +104,6 @@
         if (!popup.contains(event.target) && event.target !== profileIcon) {
             popup.classList.add("d-none");
             document.removeEventListener("click", closePopupOnOutsideClick);
-
-            // Reset selection if popup is closed without saving
             selectedProfilePicture = originalSelection;
             updateSelectionHighlight();
         }
@@ -98,12 +121,10 @@
         }
     }
 
-    //function to save profile picture changes
     function saveProfilePicture() {
         const popup = document.getElementById("profile-popup");
 
         if (!selectedProfilePicture) {
-            // Close the popup without doing anything if no profile picture is selected
             popup.classList.add("d-none");
             return;
         }
@@ -120,25 +141,52 @@
             .then(response => {
                 if (response.ok) {
                     document.getElementById("profile-icon").src = `/images/${selectedProfilePicture}.png`;
-                    location.reload(); // Refresh the page after success
+                    location.reload();
                 } else {
                     console.error('Failed to update profile picture');
                 }
             })
             .catch(error => console.error('Error:', error));
 
-        popup.classList.add("d-none"); // Close the popup regardless
+        popup.classList.add("d-none");
     }
+    function toggleEmailEdit(event) {
+        event.preventDefault();
+        const emailDisplay = document.getElementById("email-display");
+        const emailEdit = document.getElementById("email-edit");
+        const emailButton = document.getElementById("email-button");
 
+        if (emailButton.textContent === "Change") {
+            emailDisplay.classList.add("d-none");
+            emailEdit.classList.remove("d-none");
+            emailButton.textContent = "Confirm";
+        } else {
+            const newEmail = emailEdit.value.trim();
+            if (!newEmail.includes("@@")) {
+                alert("Invalid email format.");
+                return;
+            }
 
-
-    // Toggle editing mode for name
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            fetch('/Account/Profile?handler=UpdateEmail', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ email: newEmail })
+            })
+                .then(response => {
+                    if (response.ok) location.reload();
+                    else alert("Email already in use or invalid.");
+                });
+        }
+    }
     function toggleNameEdit(event) {
         event.preventDefault();
         const nameDisplay = document.getElementById("name-display");
         const nameEdit = document.getElementById("name-edit");
         const nameButton = document.getElementById("name-button");
-        const navbarName = document.getElementById("navbar-user-name"); // Target the navbar name element
 
         if (nameButton.textContent === "Change") {
             nameDisplay.classList.add("d-none");
@@ -146,15 +194,12 @@
             nameButton.textContent = "Confirm";
         } else {
             const newName = nameEdit.value.trim();
-
             if (newName.length < 2) {
                 alert("Name must be at least 2 characters long.");
                 return;
             }
 
-            // Send the updated name to the server
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
             fetch('/Account/Profile?handler=UpdateName', {
                 method: 'POST',
                 headers: {
@@ -162,23 +207,29 @@
                     'RequestVerificationToken': token
                 },
                 body: JSON.stringify({ name: newName })
-            })
-            .then(response => {
-                if (response.ok) {
-                    // Update the navbar name dynamically
-                    if (navbarName) {
-                        navbarName.textContent = newName;
-                    }
-
-                    location.reload(); // refresh the page to reload all elements
-                } else {
-                    alert("Failed to update name.");
-                }
-            })
-            .catch(error => console.error('Error:', error));
+            }).then(response => {
+                if (response.ok) location.reload();
+                else alert("Failed to update name.");
+            });
         }
     }
 
+    function leaveBusiness(businessName) {
+        if (confirm(`Are you sure you want to leave ${businessName}?`)) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            fetch('/Account/Profile?handler=LeaveBusiness', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ businessName })
+            }).then(response => {
+                if (response.ok) location.reload();
+                else alert("Failed to leave business.");
+            });
+        }
+    }
 </script>
 
 <style>
