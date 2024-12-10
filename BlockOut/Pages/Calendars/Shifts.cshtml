@@ -5,22 +5,24 @@
 }
 
 <div class="main-container">
-    <h2>Manage Shifts</h2>
-
     <!-- Create Shift -->
     <form method="post">
         @Html.AntiForgeryToken()
+        <!-- Hidden input for BusinessId -->
+        <input type="hidden" name="Shift.BusinessId" value="@Model.BusinessId" />
+        <!-- Hidden input for CalendarId -->
+        <input type="hidden" name="Shift.CalendarId" value="@Model.CalendarId" />
         <h3>Create New Shift</h3>
 
         <!-- Total Hours and Max Hours Per Person -->
         <div class="row mb-3">
             <div class="col-md-4">
                 <label for="totalWeekHours" class="form-label">Total Weekly Hours</label>
-                <input type="number" id="totalWeekHours" name="Shift.TotalWeekHours" class="form-control" value="40" min="1" required />
+                <input type="number" id="totalWeekHours" name="Shift.TotalWeekHours" class="form-control" value="500" min="1" required />
             </div>
             <div class="col-md-4">
                 <label for="maxWeeklyHours" class="form-label">Max Weekly Hours Per Person</label>
-                <input type="number" id="maxWeeklyHours" name="Shift.MaxWeeklyHoursPerPerson" class="form-control" value="20" min="1" required />
+                <input type="number" id="maxWeeklyHours" name="Shift.MaxWeeklyHoursPerPerson" class="form-control" value="35" min="1" required />
             </div>
             <div class="col-md-4">
                 <label for="maxDailyHours" class="form-label">Max Daily Hours Per Person</label>
@@ -71,7 +73,8 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Hour</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
                                 <th>Min Workers</th>
                                 <th>Max Workers</th>
                                 <th>Actions</th>
@@ -84,6 +87,18 @@
             }
         </div>
 
+        <!-- Display BusinessId and CalendarId -->
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label for="businessIdDisplay" class="form-label">Business ID</label>
+                <input type="text" id="businessIdDisplay" class="form-control" value="@Model.BusinessId" readonly />
+            </div>
+            <div class="col-md-6">
+                <label for="calendarIdDisplay" class="form-label">Calendar ID</label>
+                <input type="text" id="calendarIdDisplay" class="form-control" value="@Model.CalendarId ?? " N /A"" readonly />
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary mt-4">Create Shift</button>
     </form>
 </div>
@@ -93,13 +108,17 @@
 <script>
     function addHourlyRequirement(dayIndex, startTime = "", endTime = "") {
         const container = document.getElementById(`hourly-requirements-${dayIndex}`);
+        const rowIndex = container.children.length;
         const row = document.createElement('tr');
         row.innerHTML = `
-                <td> <input type="time" class="form-control" value="${startTime}" required /></td>
-                <td><input type="time" class="form-control" value="${endTime}" required /></td>
-                <td><input type="number" class="form-control" value="1" min="1" required /></td>
-                <td><input type="number" class="form-control" value="1" min="1" required /></td>
-                <td><button type="button" class="btn btn-danger" onclick="removeHourlyRequirement(this)">Remove</button></td>`;
+            <td>
+                <input type="time" name="HourlyRequirements[${dayIndex}][${rowIndex}][HourStartTime]" class="form-control" value="${startTime}" required />
+                to
+                <input type="time" name="HourlyRequirements[${dayIndex}][${rowIndex}][HourEndTime]" class="form-control" value="${endTime}" required />
+            </td>
+            <td><input type="number" name="HourlyRequirements[${dayIndex}][${rowIndex}][MinWorkers]" class="form-control" value="1" min="1" required /></td>
+            <td><input type="number" name="HourlyRequirements[${dayIndex}][${rowIndex}][MaxWorkers]" class="form-control" value="1" min="1" required /></td>
+            <td><button type="button" class="btn btn-danger" onclick="removeHourlyRequirement(this)">Remove</button></td>`;
         container.appendChild(row);
     }
 
@@ -119,6 +138,16 @@
                 container.innerHTML = ""; // Clear existing entries
                 let currentTime = openInput;
 
+                // Calculate the next full hour for the first entry
+                const nextHourMark = roundUpToNextHour(currentTime)
+
+                // Add the first entry from open time to the next full hour
+                if (nextHourMark <= closeInput) {
+                    addHourlyRequirement(dayIndex, currentTime, nextHourMark);
+                    currentTime = nextHourMark;
+                }
+
+                // Add subsequent entries in full-hour increments
                 while (currentTime < closeInput) {
                     const nextTime = addOneHour(currentTime);
                     if (nextTime > closeInput) {
@@ -137,6 +166,12 @@
         const newMinute = (minute + 60) % 60;
         const newHour = hour + Math.floor((minute + 60) / 60);
         return `${newHour.toString().padStart(2, "0")}:${newMinute.toString().padStart(2, "0")}`;
+    }
+
+    function roundUpToNextHour(time) {
+        const [hour, minute] = time.split(":").map(Number);
+        const newHour = minute > 0 ? hour + 1 : hour;
+        return `${newHour.toString().padStart(2, "0")}:00`;
     }
 
 

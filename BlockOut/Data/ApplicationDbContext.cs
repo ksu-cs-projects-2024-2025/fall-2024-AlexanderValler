@@ -113,19 +113,32 @@ namespace BlockOut.Data
                 .HasForeignKey(ubc => ubc.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Relationship between Shift and ShiftHourRequirement
-            modelBuilder.Entity<Shift>()
-                .HasMany(s => s.HourlyRequirements)
-                .WithOne(hr => hr.Shift)
-                .HasForeignKey(hr => hr.ShiftId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Relationship between Shift and Business
+            // Configure Shift relationships
             modelBuilder.Entity<Shift>()
                 .HasOne(s => s.Business)
                 .WithMany(b => b.Shifts)
                 .HasForeignKey(s => s.BusinessId)
+                .OnDelete(DeleteBehavior.Cascade); // Ensures shifts are deleted when the associated business is deleted
+
+            modelBuilder.Entity<Shift>()
+                .HasOne(s => s.Calendar)
+                .WithMany() // Assuming calendars don’t need a navigation property back to shifts
+                .HasForeignKey(s => s.CalendarId)
+                .OnDelete(DeleteBehavior.SetNull); // Retains shifts if the calendar is deleted (optional)
+
+            // Configure ShiftHourRequirement relationship
+            modelBuilder.Entity<ShiftHourRequirement>()
+                .HasOne(hr => hr.Shift)
+                .WithMany(s => s.HourlyRequirements)
+                .HasForeignKey(hr => hr.ShiftId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure composite keys or additional indexes as necessary
+            modelBuilder.Entity<UserBusinessRole>()
+                .HasKey(ubr => new { ubr.UserId, ubr.BusinessId });
+
+            modelBuilder.Entity<UserBusinessCalendar>()
+                .HasKey(ubc => new { ubc.UserId, ubc.CalendarId, ubc.BusinessId });
         }
     }
 }

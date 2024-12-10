@@ -20,9 +20,16 @@
         <div class="mb-3">
             <label for="participants" class="form-label">Participants</label>
             <select id="participants" name="SelectedParticipants" class="form-select" multiple>
-                @foreach (var member in Model.BusinessMembers)
+                @if (Model.BusinessMembers != null && Model.BusinessMembers.Any())
                 {
-                    <option value="@member.User.Id">@member.User.UserName (@member.Role)</option>
+                    @foreach (var member in Model.BusinessMembers)
+                    {
+                        <option value="@member.User.Id">@member.User.UserName (@member.Role)</option>
+                    }
+                }
+                else
+                {
+                    <option disabled>No participants available</option>
                 }
             </select>
             <small class="text-muted">Hold Ctrl (Cmd on Mac) to select multiple participants.</small>
@@ -32,22 +39,30 @@
         <div class="mb-3">
             <h3>Shift Logistics</h3>
             <ul class="list-group">
-                @if (Model.AvailableShifts.Any())
+                @if (Model.AvailableShifts != null && Model.AvailableShifts.Any())
                 {
                     @foreach (var shift in Model.AvailableShifts)
                     {
                         <li class="list-group-item">
                             <input type="radio" id="shift-@shift.Id" name="SelectedShift" value="@shift.Id" />
                             <label for="shift-@shift.Id">
-                                @Model.DaysOfWeek[shift.Day - 1] (@shift.StartTime.ToString("hh\\:mm") - @shift.EndTime.ToString("hh\\:mm"))
+                                @Model.DaysOfWeek.ElementAtOrDefault(shift.Day - 1) ?? "Invalid Day"
+                                (@shift.StartTime.ToString("hh\\:mm") - @shift.EndTime.ToString("hh\\:mm"))
                             </label>
                             <ul>
-                                @foreach (var requirement in shift.HourlyRequirements)
+                                @if (shift.HourlyRequirements != null && shift.HourlyRequirements.Any())
                                 {
-                                    <li>
-                                        Hour: @requirement.HourStartTime.ToString("hh\\:mm") - @requirement.HourEndTime.ToString("hh\\:mm"),
-                                        Min Workers: @requirement.MinWorkers, Max Workers: @requirement.MaxWorkers
-                                    </li>
+                                    @foreach (var requirement in shift.HourlyRequirements)
+                                    {
+                                        <li>
+                                            Hour: @requirement.HourStartTime.ToString("hh\\:mm") - @requirement.HourEndTime.ToString("hh\\:mm"),
+                                            Min Workers: @requirement.MinWorkers, Max Workers: @requirement.MaxWorkers
+                                        </li>
+                                    }
+                                }
+                                else
+                                {
+                                    <li>No hourly requirements available for this shift.</li>
                                 }
                             </ul>
                         </li>
