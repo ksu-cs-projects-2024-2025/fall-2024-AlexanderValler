@@ -1,0 +1,205 @@
+﻿@page "{businessId}"
+@model BlockOut.Pages.Calendars.ShiftsModel
+@{
+    ViewData["Title"] = "Manage Shifts";
+}
+
+<div class="main-container">
+    <h2>Manage Shifts</h2>
+
+    <!-- Create Shift -->
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <h3>Create New Shift</h3>
+
+        <!-- Total Hours and Max Hours Per Person -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="totalWeekHours" class="form-label">Total Weekly Hours</label>
+                <input type="number" id="totalWeekHours" name="Shift.TotalWeekHours" class="form-control" value="40" min="1" required />
+            </div>
+            <div class="col-md-4">
+                <label for="maxWeeklyHours" class="form-label">Max Weekly Hours Per Person</label>
+                <input type="number" id="maxWeeklyHours" name="Shift.MaxWeeklyHoursPerPerson" class="form-control" value="20" min="1" required />
+            </div>
+            <div class="col-md-4">
+                <label for="maxDailyHours" class="form-label">Max Daily Hours Per Person</label>
+                <input type="number" id="maxDailyHours" name="Shift.MaxDailyHoursPerPerson" class="form-control" value="8" min="1" required />
+            </div>
+        </div>
+
+        <!-- Open/Close Times -->
+        <h4>Open/Close Times</h4>
+        <button type="button" class="btn btn-secondary mb-3" onclick="importOpenCloseTimes()">Import Open/Close Times</button>
+        <div id="open-close-times">
+            @for (var i = 0; i < Model.DaysOfWeek.Length; i++)
+            {
+                <div class="row mb-2 align-items-center">
+                    <div class="col-md-3">
+                        <label>@Model.DaysOfWeek[i]</label>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="time" id="open-time-@i" name="OpenCloseTimes[@i].OpenTime" class="form-control" placeholder="Open Time" onchange="checkTabStatus(@i)" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="time" id="close-time-@i" name="OpenCloseTimes[@i].CloseTime" class="form-control" placeholder="Close Time" onchange="checkTabStatus(@i)" />
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-danger" onclick="clearDay(this, @i)">Clear</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Hourly Requirements -->
+        <h4>Hourly Requirements</h4>
+        <button type="button" class="btn btn-secondary mb-3" onclick="autoFillAllDays()">Auto Fill</button>
+        <ul class="nav nav-tabs" id="day-tabs">
+            @for (var i = 0; i < Model.DaysOfWeek.Length; i++)
+            {
+                <li class="nav-item">
+                    <a class="nav-link @((i == 0) ? "active" : "")" id="tab-@i" data-bs-toggle="tab" href="#tab-content-@i">
+                        @Model.DaysOfWeek[i]
+                    </a>
+                </li>
+            }
+        </ul>
+        <div class="tab-content">
+            @for (var i = 0; i < Model.DaysOfWeek.Length; i++)
+            {
+                <div class="tab-pane fade @((i == 0) ? "show active" : "")" id="tab-content-@i">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Hour</th>
+                                <th>Min Workers</th>
+                                <th>Max Workers</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hourly-requirements-@i"></tbody>
+                    </table>
+                    <button type="button" class="btn btn-secondary mt-2" onclick="addHourlyRequirement(@i)">Add Hourly Requirement</button>
+                </div>
+            }
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-4">Create Shift</button>
+    </form>
+</div>
+
+
+
+<script>
+    function addHourlyRequirement(dayIndex, startTime = "", endTime = "") {
+        const container = document.getElementById(`hourly-requirements-${dayIndex}`);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+                <td> <input type="time" class="form-control" value="${startTime}" required /></td>
+                <td><input type="time" class="form-control" value="${endTime}" required /></td>
+                <td><input type="number" class="form-control" value="1" min="1" required /></td>
+                <td><input type="number" class="form-control" value="1" min="1" required /></td>
+                <td><button type="button" class="btn btn-danger" onclick="removeHourlyRequirement(this)">Remove</button></td>`;
+        container.appendChild(row);
+    }
+
+    function removeHourlyRequirement(button) {
+        const row = button.closest('tr');
+        row.remove();
+    }
+
+    function autoFillAllDays() {
+        const openCloseRows = document.querySelectorAll('#open-close-times .row');
+        openCloseRows.forEach((row, dayIndex) => {
+            const openInput = document.getElementById(`open-time-${dayIndex}`).value;
+            const closeInput = document.getElementById(`close-time-${dayIndex}`).value;
+
+            if (openInput && closeInput) {
+                const container = document.getElementById(`hourly-requirements-${dayIndex}`);
+                container.innerHTML = ""; // Clear existing entries
+                let currentTime = openInput;
+
+                while (currentTime < closeInput) {
+                    const nextTime = addOneHour(currentTime);
+                    if (nextTime > closeInput) {
+                        addHourlyRequirement(dayIndex, currentTime, closeInput); // Add final slot
+                        break;
+                    }
+                    addHourlyRequirement(dayIndex, currentTime, nextTime); // Add full-hour slot
+                    currentTime = nextTime;
+                }
+            }
+        });
+    }
+
+    function addOneHour(time) {
+        const [hour, minute] = time.split(":").map(Number);
+        const newMinute = (minute + 60) % 60;
+        const newHour = hour + Math.floor((minute + 60) / 60);
+        return `${newHour.toString().padStart(2, "0")}:${newMinute.toString().padStart(2, "0")}`;
+    }
+
+
+    function importOpenCloseTimes() {
+        const openCloseTimes = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+            Model.BusinessOpenHours.Select(o => new
+            {
+                o.Day,
+                OpenTime = o.OpenTime.HasValue ? o.OpenTime.Value.ToString("hh\\:mm") : null,
+                CloseTime = o.CloseTime.HasValue ? o.CloseTime.Value.ToString("hh\\:mm") : null
+            })
+            ));
+
+        const container = document.getElementById('open-close-times');
+        const rows = container.querySelectorAll('.row');
+        rows.forEach((row, index) => {
+            const inputs = row.querySelectorAll('input');
+            const dayOpenClose = openCloseTimes.find(oc => oc.Day === (index + 1));
+            if (dayOpenClose) {
+                inputs[0].value = dayOpenClose.OpenTime || "";
+                inputs[1].value = dayOpenClose.CloseTime || "";
+            } else {
+                inputs[0].value = "";
+                inputs[1].value = "";
+                disableTab(index); // Disable the day tab if no times are set
+            }
+        });
+    }
+
+    function clearDay(button, dayIndex) {
+        const row = button.closest('.row');
+        const inputs = row.querySelectorAll('input');
+        inputs.forEach(input => input.value = "");
+
+        // Clear hourly requirements for the day
+        const container = document.getElementById(`hourly-requirements-${dayIndex}`);
+        if (container) {
+            container.innerHTML = "";
+        }
+
+        disableTab(dayIndex);
+    }
+
+    function disableTab(dayIndex) {
+        const tab = document.getElementById(`tab-${dayIndex}`);
+        tab.classList.add("disabled");
+        tab.removeAttribute("href");
+    }
+
+    function enableTab(dayIndex) {
+        const tab = document.getElementById(`tab-${dayIndex}`);
+        tab.classList.remove("disabled");
+        tab.setAttribute("href", `#tab-content-${dayIndex}`);
+    }
+    function checkTabStatus(dayIndex) {
+        const openInput = document.getElementById(`open-time-${dayIndex}`).value;
+        const closeInput = document.getElementById(`close-time-${dayIndex}`).value;
+
+        if (openInput && closeInput) {
+            enableTab(dayIndex);
+        } else {
+            disableTab(dayIndex);
+        }
+    }
+</script>
+

@@ -23,6 +23,9 @@ namespace BlockOut.Models
 
         // Maximum hours a single person can work in a single day
         public int MaxDailyHoursPerPerson { get; set; }
+
+        public string BusinessId { get; set; } // Foreign Key to Business
+        public Business Business { get; set; } // Navigation Property
     }
 
     public class ShiftHourRequirement

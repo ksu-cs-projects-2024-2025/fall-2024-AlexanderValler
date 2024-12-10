@@ -8,8 +8,8 @@ namespace BlockOut.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Ensure the ID is auto-generated
         public string Id { get; set; }
         public string Name { get; set; }
-        public string Type { get; set; } // "Weekly", "Monthly", etc.
-        public string Data { get; set; } // Serialized calendar data
+        public string? Type { get; set; } // "Weekly", "Monthly", etc.
+        public string? Data { get; set; } // Serialized calendar data
 
         // Link to Business
         public string? BusinessId { get; set; }

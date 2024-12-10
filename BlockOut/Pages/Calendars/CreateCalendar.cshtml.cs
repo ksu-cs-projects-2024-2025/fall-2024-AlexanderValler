@@ -13,6 +13,7 @@ namespace BlockOut.Pages.Calendars
     public class CreateCalendarModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        public List<Shift> AvailableShifts { get; set; } = new List<Shift>();
 
         public CreateCalendarModel(ApplicationDbContext context)
         {
@@ -23,13 +24,9 @@ namespace BlockOut.Pages.Calendars
         public string CalendarName { get; set; }
 
         [BindProperty]
-        public string CalendarDescription { get; set; }
-
-        [BindProperty]
         public string BusinessId { get; set; }
 
         public List<UserBusinessRole> BusinessMembers { get; set; } = new List<UserBusinessRole>();
-        public List<OpenHours> BusinessOpenHours { get; set; } = new List<OpenHours>();
         public string[] DaysOfWeek { get; } = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
         public async Task<IActionResult> OnGetAsync(string businessId)
@@ -44,7 +41,6 @@ namespace BlockOut.Pages.Calendars
             var business = await _context.Businesses
                 .Include(b => b.UserBusinessRoles)
                 .ThenInclude(ubr => ubr.User)
-                .Include(b => b.OpenHours)
                 .FirstOrDefaultAsync(b => b.Id == businessId);
 
             if (business == null)
@@ -53,11 +49,15 @@ namespace BlockOut.Pages.Calendars
             }
 
             BusinessMembers = business.UserBusinessRoles.ToList();
-            BusinessOpenHours = business.OpenHours;
+
+            AvailableShifts = await _context.Shifts
+                .Where(s => s.BusinessId == businessId)
+                .ToListAsync();
+
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync([FromForm] Dictionary<string, Dictionary<string, ShiftRequirement>> shiftRequirements)
+        public async Task<IActionResult> OnPostAsync([FromForm] List<string> selectedShifts)
         {
             if (string.IsNullOrWhiteSpace(CalendarName) || string.IsNullOrWhiteSpace(BusinessId))
             {
@@ -65,9 +65,7 @@ namespace BlockOut.Pages.Calendars
                 return Page();
             }
 
-            var business = await _context.Businesses
-                .Include(b => b.OpenHours)
-                .FirstOrDefaultAsync(b => b.Id == BusinessId);
+            var business = await _context.Businesses.FirstOrDefaultAsync(b => b.Id == BusinessId);
 
             if (business == null)
             {
@@ -83,57 +81,22 @@ namespace BlockOut.Pages.Calendars
                 Type = "Shift"
             };
 
-            // Handle shift requirements
-            var shifts = new List<Shift>();
-            foreach (var dayEntry in shiftRequirements)
+            if (selectedShifts != null && selectedShifts.Any())
             {
-                if (!int.TryParse(dayEntry.Key, out var day))
+                foreach (var shiftId in selectedShifts)
                 {
-                    ModelState.AddModelError(string.Empty, $"Invalid day format: {dayEntry.Key}");
-                    return Page();
-                }
-
-                foreach (var timeSlotEntry in dayEntry.Value)
-                {
-                    if (!TimeSpan.TryParse(timeSlotEntry.Key, out var startTime))
+                    var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == int.Parse(shiftId));
+                    if (shift != null)
                     {
-                        ModelState.AddModelError(string.Empty, $"Invalid time format: {timeSlotEntry.Key}");
-                        return Page();
+                        shift.CalendarId = newCalendar.Id;
                     }
-
-                    var requirement = timeSlotEntry.Value;
-
-                    if (requirement.MinWorkers > requirement.MaxWorkers)
-                    {
-                        ModelState.AddModelError(string.Empty, $"MinWorkers cannot be greater than MaxWorkers for {DaysOfWeek[day]} at {startTime}");
-                        return Page();
-                    }
-
-                    shifts.Add(new Shift
-                    {
-                        Day = day,
-                        StartTime = startTime,
-                        EndTime = startTime.Add(TimeSpan.FromHours(1)),
-                        MinWorkers = requirement.MinWorkers,
-                        MaxWorkers = requirement.MaxWorkers,
-                        CalendarId = newCalendar.Id
-                    });
                 }
             }
 
-            // Save calendar and shifts to the database
             _context.Calendars.Add(newCalendar);
-            _context.Shifts.AddRange(shifts);
-
             await _context.SaveChangesAsync();
 
             return RedirectToPage("/Calendars/View", new { calendarId = newCalendar.Id });
-        }
-
-        public class ShiftRequirement
-        {
-            public int MinWorkers { get; set; }
-            public int MaxWorkers { get; set; }
         }
     }
 }

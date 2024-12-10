@@ -22,6 +22,7 @@ namespace BlockOut.Data
         public DbSet<UserBusinessRole> UserBusinessRoles { get; set; } // For multi-role support
         public DbSet<UserBusinessCalendar> UserBusinessCalendars { get; set; }
         public DbSet<Shift> Shifts { get; set; }
+        public DbSet<ShiftHourRequirement> ShiftHourRequirements { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -110,6 +111,20 @@ namespace BlockOut.Data
                 .HasOne(ubc => ubc.Business)
                 .WithMany(b => b.UserBusinessCalendars)
                 .HasForeignKey(ubc => ubc.BusinessId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Relationship between Shift and ShiftHourRequirement
+            modelBuilder.Entity<Shift>()
+                .HasMany(s => s.HourlyRequirements)
+                .WithOne(hr => hr.Shift)
+                .HasForeignKey(hr => hr.ShiftId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Relationship between Shift and Business
+            modelBuilder.Entity<Shift>()
+                .HasOne(s => s.Business)
+                .WithMany(b => b.Shifts)
+                .HasForeignKey(s => s.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

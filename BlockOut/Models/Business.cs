@@ -23,5 +23,8 @@ namespace BlockOut.Models
 
         // Collection of UserBusinessCalendars
         public List<UserBusinessCalendar> UserBusinessCalendars { get; set; } = new List<UserBusinessCalendar>();
+
+        public ICollection<Shift> Shifts { get; set; } = new List<Shift>();
+
     }
 }
