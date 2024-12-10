@@ -1,4 +1,90 @@
-﻿@page
+﻿@page "{encodedId?}"
 @model BlockOut.Pages.Businesses.ManageEmployeesModel
 @{
+    ViewData["Title"] = "Manage Employees";
 }
+
+<div class="main-container">
+    <h1>Manage Employees</h1>
+
+    <div>
+        <h3>Owners</h3>
+        <ul class="list-group">
+            @foreach (var userRole in Model.OwnerRoles)
+            {
+                <li class="list-group-item d-flex align-items-center">
+                    <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 40px; height: 40px;" />
+                    <span>@userRole.User.UserName</span>
+                    @if (Model.IsOwner)
+                    {
+                        <button class="btn btn-sm btn-danger ms-auto" onclick="changeRole('@userRole.UserId', 'remove')">Remove</button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div>
+        <h3>Managers</h3>
+        <ul class="list-group">
+            @foreach (var userRole in Model.ManagerRoles)
+            {
+                <li class="list-group-item d-flex align-items-center">
+                    <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 40px; height: 40px;" />
+                    <span>@userRole.User.UserName</span>
+                    <button class="btn btn-sm btn-primary ms-auto" onclick="changeRole('@userRole.UserId', 'employee')">Make Employee</button>
+                    @if (Model.IsOwner)
+                    {
+                        <button class="btn btn-sm btn-danger ms-2" onclick="changeRole('@userRole.UserId', 'remove')">Remove</button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div>
+        <h3>Employees</h3>
+        <ul class="list-group">
+            @foreach (var userRole in Model.EmployeeRoles)
+            {
+                <li class="list-group-item d-flex align-items-center">
+                    <img src="~/images/@(userRole.User.ProfilePictureId ?? 0).png" alt="Profile Picture" class="rounded-circle me-2" style="width: 40px; height: 40px;" />
+                    <span>@userRole.User.UserName</span>
+                    @if (Model.IsManagerOrOwner)
+                    {
+                        <button class="btn btn-sm btn-primary ms-auto" onclick="changeRole('@userRole.UserId', 'manager')">Make Manager</button>
+                    }
+                    @if (Model.IsOwner)
+                    {
+                        <button class="btn btn-sm btn-danger ms-2" onclick="changeRole('@userRole.UserId', 'remove')">Remove</button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+
+    <h3>Invite Code</h3>
+    <div class="form-group">
+        <label>Share this code to invite users to join your business:</label>
+        <input type="text" class="form-control" readonly value="@Model.InviteCode" />
+    </div>
+</div>
+
+<script>
+    function changeRole(userId, role) {
+        fetch('/Businesses/ManageEmployees?handler=ChangeRole', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ userId, role, businessId: '@Model.BusinessId' })
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to change role. Please try again.');
+            }
+        });
+    }
+</script>

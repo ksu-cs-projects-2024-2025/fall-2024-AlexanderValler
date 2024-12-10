@@ -47,8 +47,48 @@
 
     <!-- Right Column: Business Open Hours and Users -->
     <div class="col-md-4">
-        <h4>Open Hours</h4>
-        <table class="table table-bordered">
+        <div class="d-flex justify-content-between">
+            <h4>Open Hours</h4>
+            @if (Model.IsOwnerOrManager)
+            {
+                <button id="edit-hours-button" class="btn btn-link text-primary" onclick="toggleHoursEdit()" style="border: none; background: none;">Edit</button>
+            }
+        </div>
+        <form id="edit-hours-form" class="d-none">
+            @Html.AntiForgeryToken()
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Open</th>
+                        <th>Close</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.DaysOfWeek.Length; i++)
+                    {
+                        var dayHours = Model.Business.OpenHours.FirstOrDefault(oh => oh.Day == i + 1);
+                        <tr>
+                            <td>
+                                @Model.DaysOfWeek[i]
+                                <br />
+                                <a href="javascript:void(0);" class="text-danger" onclick="toggleClosed(@i)">Closed</a>
+                            </td>
+                            <td>
+                                <input type="time" name="OpenTime" class="form-control" id="open-time-@i"
+                                        value="@dayHours?.OpenTime?.ToString("hh\\:mm")" @(dayHours?.IsClosed == true ? "disabled" : "") />
+                            </td>
+                            <td>
+                                <input type="time" name="CloseTime" class="form-control" id="close-time-@i"
+                                        value="@dayHours?.CloseTime?.ToString("hh\\:mm")" @(dayHours?.IsClosed == true ? "disabled" : "") />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </form>
+
+        <table class="table table-bordered" id="hours-table">
             <thead>
                 <tr>
                     <th>Day</th>
@@ -63,37 +103,30 @@
                     <tr>
                         <td>@Model.DaysOfWeek[i]</td>
                         <td>
-                            @if (dayHours == null)
+                            @if (dayHours == null || dayHours.IsClosed || !dayHours.OpenTime.HasValue)
                             {
-                                    <span class="text-danger">Data Missing</span>
-                            }
-                            else if (dayHours.IsClosed || !dayHours.OpenTime.HasValue)
-                            {
-                                    <span>Closed</span>
+                                <span>Closed</span>
                             }
                             else
                             {
-                                    <span>@dayHours.OpenTime.Value.ToString("hh\\:mm")</span>
+                                <span>@dayHours.OpenTime.Value.ToString("hh\\:mm")</span>
                             }
                         </td>
                         <td>
-                            @if (dayHours == null)
+                            @if (dayHours == null || dayHours.IsClosed || !dayHours.CloseTime.HasValue)
                             {
-                                    <span class="text-danger">Data Missing</span>
-                            }
-                            else if (dayHours.IsClosed || !dayHours.CloseTime.HasValue)
-                            {
-                                    <span>Closed</span>
+                                <span>Closed</span>
                             }
                             else
                             {
-                                    <span>@dayHours.CloseTime.Value.ToString("hh\\:mm")</span>
+                                <span>@dayHours.CloseTime.Value.ToString("hh\\:mm")</span>
                             }
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
+        <button id="save-hours-button" class="btn btn-primary d-none" onclick="saveHours()">Save</button>
 
         <h4>Users</h4>
         <ul class="list-group">
@@ -241,4 +274,77 @@
                 updateError.classList.remove("d-none");
             });
     }
+
+
+    function toggleHoursEdit() {
+        const form = document.getElementById('edit-hours-form');
+        const table = document.getElementById('hours-table');
+        const editButton = document.getElementById('edit-hours-button');
+        const saveButton = document.getElementById('save-hours-button');
+
+        form.classList.toggle('d-none');
+        table.classList.toggle('d-none');
+        saveButton.classList.toggle('d-none');
+
+        if (form.classList.contains('d-none')) {
+            editButton.textContent = 'Edit';
+        } else {
+            editButton.textContent = 'Cancel';
+        }
+    }
+
+    async function saveHours() {
+        const openHours = [];
+        for (let i = 0; i < 7; i++) {
+            const openTimeInput = document.getElementById(`open-time-${i}`);
+            const closeTimeInput = document.getElementById(`close-time-${i}`);
+            const isClosed = openTimeInput.disabled;
+
+            openHours.push({
+                Day: i + 1,
+                OpenTime: isClosed ? null : openTimeInput.value || null,
+                CloseTime: isClosed ? null : closeTimeInput.value || null,
+                IsClosed: isClosed
+            });
+        }
+
+        try {
+            const response = await fetch('?handler=SaveOpenHours', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify(openHours)
+            });
+
+            if (response.ok) {
+                window.location.reload(); // Refresh the page without showing a popup
+            } else {
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
+                throw new Error('Failed to save open hours.');
+            }
+        } catch (error) {
+            console.error("Error saving open hours:", error);
+            alert('An error occurred while saving open hours.');
+        }
+    }
+
+    function toggleClosed(index) {
+    const openTimeInput = document.getElementById(`open-time-${index}`);
+    const closeTimeInput = document.getElementById(`close-time-${index}`);
+
+    if (openTimeInput.disabled) {
+        // Reopen the day (enable inputs)
+        openTimeInput.disabled = false;
+        closeTimeInput.disabled = false;
+    } else {
+        // Mark the day as closed (disable inputs)
+        openTimeInput.disabled = true;
+        closeTimeInput.disabled = true;
+        openTimeInput.value = ""; // Clear the value
+        closeTimeInput.value = ""; // Clear the value
+    }
+}
 </script>

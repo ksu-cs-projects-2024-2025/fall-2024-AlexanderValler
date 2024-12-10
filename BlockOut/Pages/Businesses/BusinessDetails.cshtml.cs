@@ -120,6 +120,103 @@ namespace BlockOut.Pages.Businesses
             return Page();
         }
 
+        public async Task<IActionResult> OnPostSaveOpenHoursAsync([FromBody] List<OpenHoursUpdateModel>? updatedOpenHours)
+        {
+            if (updatedOpenHours == null || !updatedOpenHours.Any())
+            {
+                Console.WriteLine("No open hours provided."); // Logging
+                return BadRequest("No open hours provided.");
+            }
+
+            var businessId = HttpContext.Session.GetString("CurrentBusinessId");
+            if (string.IsNullOrEmpty(businessId))
+            {
+                Console.WriteLine("Business ID is missing."); // Logging
+                return BadRequest("Business ID is missing.");
+            }
+
+            // Retrieve the business entity
+            var business = await _context.Businesses
+                .Include(b => b.OpenHours)
+                .FirstOrDefaultAsync(b => b.Id == businessId);
+
+            if (business == null)
+            {
+                Console.WriteLine($"Business with ID {businessId} not found."); // Logging
+                return NotFound("Business not found.");
+            }
+
+            foreach (var updatedHour in updatedOpenHours)
+            {
+                var existingHour = business.OpenHours.FirstOrDefault(oh => oh.Day == updatedHour.Day);
+
+                try
+                {
+                    // Parse and convert OpenTime and CloseTime
+                    var openTime = ParseTime(updatedHour.OpenTime);
+                    var closeTime = ParseTime(updatedHour.CloseTime);
+
+                    if (existingHour != null)
+                    {
+                        // Update existing record
+                        existingHour.OpenTime = openTime;
+                        existingHour.CloseTime = closeTime;
+                        existingHour.IsClosed = updatedHour.IsClosed;
+                    }
+                    else
+                    {
+                        // Add new record if not existing
+                        business.OpenHours.Add(new OpenHours
+                        {
+                            Day = updatedHour.Day,
+                            OpenTime = openTime,
+                            CloseTime = closeTime,
+                            IsClosed = updatedHour.IsClosed,
+                            BusinessId = business.Id
+                        });
+                    }
+                }
+                catch (FormatException ex)
+                {
+                    //Console.WriteLine($"Error parsing time for Day {updatedHour.Day}: {ex.Message}");
+                    return BadRequest($"Invalid time format for Day {updatedHour.Day}. Please use HH:mm format.");
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            //Console.WriteLine("Open hours updated successfully."); // Logging
+            return new JsonResult(new { success = true });
+        }
+
+        // Helper method to parse time strings into TimeSpan
+        private TimeSpan? ParseTime(string? timeString)
+        {
+            if (string.IsNullOrWhiteSpace(timeString))
+            {
+                return null; // Return null for empty strings (closed hours)
+            }
+
+            if (TimeSpan.TryParse(timeString, out var time))
+            {
+                return time;
+            }
+
+            throw new FormatException($"Invalid time format: {timeString}. Expected format is HH:mm.");
+        }
+
+
+
+
+        public class OpenHoursUpdateModel
+        {
+            public int Day { get; set; }
+            public string? OpenTime { get; set; } // Nullable to allow for "Closed" days
+            public string? CloseTime { get; set; } // Nullable to allow for "Closed" days
+            public bool IsClosed { get; set; } // Indicates if the business is closed
+        }
+
+
         private string EncodeBusinessId(string businessId)
         {
             var bytes = Encoding.UTF8.GetBytes(businessId);

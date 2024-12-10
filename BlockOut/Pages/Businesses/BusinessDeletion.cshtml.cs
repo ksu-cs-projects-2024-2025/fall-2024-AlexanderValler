@@ -1,141 +1,49 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using BlockOut.Data;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using BlockOut.Data;
+using BlockOut.Models;
 using System.Linq;
 using System.Threading.Tasks;
-using BlockOut.Models;
-using System.Text;
-using Microsoft.AspNetCore.Identity;
-using System.Globalization;
 
-namespace BlockOut.Pages.Businesses
+namespace BlockOut.Pages
 {
-    [Authorize]
     public class BusinessDeletionModel : PageModel
     {
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
 
-        public BusinessDeletionModel(ApplicationDbContext context)
+        public BusinessDeletionModel(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
         {
+            _userManager = userManager;
             _context = context;
         }
 
         [BindProperty(SupportsGet = true)]
+        public string EncodedId { get; set; }
+
         public string BusinessId { get; set; }
 
-        [BindProperty(SupportsGet = true)]
-        public string EncodedBusinessId { get; set; }
-
-        public Business Business { get; set; }
-
-        public async Task<IActionResult> OnGetAsync(string businessId)
+        public async Task<IActionResult> OnGetAsync(string encodedId)
         {
-
-            if (string.IsNullOrWhiteSpace(businessId))
+            if (string.IsNullOrWhiteSpace(encodedId))
             {
-                businessId = HttpContext.Session.GetString("CurrentBusinessId");
-                if (string.IsNullOrWhiteSpace(businessId))
-                {
-                    return NotFound("Business ID is required.");
-                }
-            }
-            else
-            {
-                try
-                {
-                    businessId = DecodeBusinessId(businessId);
-                }
-                catch (FormatException)
-                {
-                    return BadRequest("Invalid business ID format.");
-                }
-
-                HttpContext.Session.SetString("CurrentBusinessId", businessId);
-            }
-
-            Business = await _context.Businesses
-                .Include(b => b.UserBusinessRoles)
-                .ThenInclude(ubr => ubr.User)
-                .Include(b => b.Calendars)
-                .ThenInclude(c => c.UserBusinessCalendars)
-                .ThenInclude(ubc => ubc.User)
-                .Include(b => b.OpenHours) // Ensure OpenHours is included
-                .FirstOrDefaultAsync(b => b.Id == businessId);
-
-            if (Business == null)
-            {
-                return NotFound("Business not found.");
-            }
-
-            EncodedBusinessId = EncodeBusinessId(businessId);
-
-            return Page();
-        }
-
-        public async Task<IActionResult> OnPostDeleteBusinessAsync(string businessId)
-        {
-            if (string.IsNullOrWhiteSpace(businessId))
-            {
-                return BadRequest("Business ID is required.");
-            }
-
-            // Load the business and related entities
-            var business = await _context.Businesses
-                .Include(b => b.Calendars)
-                .Include(b => b.OpenHours)
-                .Include(b => b.UserBusinessRoles)
-                .Include(b => b.UserBusinessCalendars)
-                .FirstOrDefaultAsync(b => b.Id == businessId);
-
-            if (business == null)
-            {
-                return NotFound("Business not found.");
-            }
-
-            // Remove associated data
-            _context.Calendars.RemoveRange(business.Calendars);
-            _context.OpenHours.RemoveRange(business.OpenHours);
-            _context.UserBusinessRoles.RemoveRange(business.UserBusinessRoles);
-            _context.UserBusinessCalendars.RemoveRange(business.UserBusinessCalendars);
-            _context.Businesses.Remove(business);
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex)
-            {
-                // Log the exception
-                Console.WriteLine($"Error deleting business: {ex.Message}");
-                return StatusCode(500, "Error occurred while deleting the business.");
-            }
-
-            return new JsonResult(new { success = true });
-        }
-
-        public async Task<IActionResult> OnPostAsync(string businessId)
-        {
-            if (string.IsNullOrWhiteSpace(businessId))
-            {
-                return BadRequest("Business ID is required.");
+                return NotFound("Encoded business ID is required.");
             }
 
             try
             {
-                BusinessId = DecodeBusinessId(businessId);
+                BusinessId = DecodeBusinessId(encodedId);
             }
-            catch (FormatException)
+            catch
             {
-                return BadRequest("Invalid business ID format.");
+                return BadRequest("Invalid encoded business ID format.");
             }
 
+            var user = await _userManager.GetUserAsync(User);
             var business = await _context.Businesses
-                .Include(b => b.Calendars)
-                .Include(b => b.OpenHours)
                 .Include(b => b.UserBusinessRoles)
-                .Include(b => b.UserBusinessCalendars)
                 .FirstOrDefaultAsync(b => b.Id == BusinessId);
 
             if (business == null)
@@ -143,36 +51,93 @@ namespace BlockOut.Pages.Businesses
                 return NotFound("Business not found.");
             }
 
-            // Remove related entities
-            _context.Calendars.RemoveRange(business.Calendars);
-            _context.OpenHours.RemoveRange(business.OpenHours);
-            _context.UserBusinessRoles.RemoveRange(business.UserBusinessRoles);
-            _context.UserBusinessCalendars.RemoveRange(business.UserBusinessCalendars);
+            var isOwner = business.UserBusinessRoles.Any(ubr =>
+                ubr.UserId == user.Id && ubr.Role == "Owner");
 
-            // Remove the business
-            _context.Businesses.Remove(business);
-            await _context.SaveChangesAsync();
+            if (!isOwner)
+            {
+                return Forbid();
+            }
 
-            return RedirectToPage("/Businesses/Index");
+            return Page();
         }
 
-        private string EncodeBusinessId(string businessId)
+        public async Task<IActionResult> OnPostAsync(string encodedId, string enteredBusinessId)
         {
-            var bytes = Encoding.UTF8.GetBytes(businessId);
-            var base64 = Convert.ToBase64String(bytes);
-            char[] charArray = base64.ToCharArray();
-            Array.Reverse(charArray);
-            return new string(charArray);
+            if (string.IsNullOrWhiteSpace(encodedId))
+            {
+                Console.WriteLine("Encoded ID is missing.");
+                return BadRequest("Encoded ID is required.");
+            }
+
+            try
+            {
+                BusinessId = DecodeBusinessId(encodedId);
+                Console.WriteLine($"Decoded BusinessId: {BusinessId}");
+            }
+            catch
+            {
+                Console.WriteLine("Failed to decode BusinessId.");
+                return BadRequest("Invalid encoded business ID format.");
+            }
+
+            if (string.IsNullOrWhiteSpace(enteredBusinessId) || enteredBusinessId != BusinessId)
+            {
+                Console.WriteLine("Business ID mismatch.");
+                ModelState.AddModelError("", "Business ID does not match.");
+                return Page();
+            }
+
+            var business = await _context.Businesses
+                .Include(b => b.UserBusinessRoles)
+                .Include(b => b.Calendars)
+                .Include(b => b.OpenHours)
+                .Include(b => b.UserBusinessCalendars)
+                .FirstOrDefaultAsync(b => b.Id == BusinessId);
+
+            if (business == null)
+            {
+                Console.WriteLine("Business not found.");
+                return NotFound("Business not found.");
+            }
+
+            try
+            {
+                Console.WriteLine("Deleting related entities...");
+                var relatedRoles = _context.UserBusinessRoles.Where(ubr => ubr.BusinessId == business.Id);
+                var relatedCalendars = _context.Calendars.Where(c => c.BusinessId == business.Id);
+                var relatedOpenHours = _context.OpenHours.Where(oh => oh.BusinessId == business.Id);
+                var relatedUserCalendars = _context.UserBusinessCalendars.Where(ubc => ubc.BusinessId == business.Id);
+
+                _context.UserBusinessRoles.RemoveRange(relatedRoles);
+                _context.Calendars.RemoveRange(relatedCalendars);
+                _context.OpenHours.RemoveRange(relatedOpenHours);
+                _context.UserBusinessCalendars.RemoveRange(relatedUserCalendars);
+                _context.Businesses.Remove(business);
+
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Business and related entities deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during deletion: {ex.Message}");
+                ModelState.AddModelError("", "Failed to delete the business. Please try again.");
+                return Page();
+            }
+
+            Console.WriteLine("Redirecting to Dashboard...");
+            TempData["SuccessMessage"] = "Business deleted successfully.";
+            return RedirectToPage("/Dashboard");
         }
+
+
 
         private string DecodeBusinessId(string encodedId)
         {
             char[] charArray = encodedId.ToCharArray();
             Array.Reverse(charArray);
             var bytes = Convert.FromBase64String(new string(charArray));
-            return Encoding.UTF8.GetString(bytes);
+            return System.Text.Encoding.UTF8.GetString(bytes);
         }
-
-
     }
 }

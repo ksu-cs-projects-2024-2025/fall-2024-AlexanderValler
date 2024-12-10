@@ -1,42 +1,37 @@
-﻿@page "{businessId}"
-@model BlockOut.Pages.Businesses.BusinessDeletionModel
+﻿@page "{encodedId?}"
+@model BlockOut.Pages.BusinessDeletionModel
 @{
-    ViewData["Title"] = "Business Deletion";
+    ViewData["Title"] = "Delete Business";
 }
 
-<h1 class="text-center">Business Deletion</h1>
+<div class="main-container">
+    <h1>Delete Business</h1>
 
-<p class="text-center">This action cannot be undone and will permanently delete the business along with all associated data.</p>
+    <p>Only the owner of the business can perform this action. Deleting a business cannot be undone.</p>
 
-<div class="text-center mt-4">
-    <label for="confirm-delete">Type "DELETE" to confirm:</label>
-    <input type="text" id="confirm-delete" class="form-control mx-auto" style="width: 200px; text-transform: uppercase;" oninput="checkConfirmDelete()" />
-    <button id="delete-business-button" class="btn btn-danger mt-3" onclick="deleteBusiness()" disabled>Delete Business</button>
+    <div class="form-group">
+        <label>Business ID</label>
+        <p class="form-control-plaintext">@Model.BusinessId</p>
+    </div>
+
+    <form method="post">
+        <input type="hidden" name="EncodedId" value="@Model.EncodedId" />
+        <div class="form-group">
+            <label for="EnteredBusinessId">Confirm Business ID</label>
+            <input type="text" id="EnteredBusinessId" name="EnteredBusinessId" class="form-control"
+                   oninput="checkMatch()" required />
+        </div>
+        <button type="submit" id="DeleteButton" class="btn btn-danger" disabled>Delete Business</button>
+        <a asp-page="/Dashboard" class="btn btn-secondary">Cancel</a>
+    </form>
+
 </div>
 
 <script>
-    function checkConfirmDelete() {
-        const confirmInput = document.getElementById("confirm-delete");
-        const deleteButton = document.getElementById("delete-business-button");
-        deleteButton.disabled = confirmInput.value.trim().toUpperCase() !== "DELETE";
-    }
-
-    function deleteBusiness() {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        const businessId = "@Model.BusinessId";
-
-        fetch(`/Businesses/BusinessDeletion?handler=DeleteBusiness&businessId=${businessId}`, {
-            method: 'POST',
-            headers: {
-                'RequestVerificationToken': token
-            }
-        }).then(response => {
-            if (response.ok) {
-                // Redirect to the dashboard or homepage after deletion
-                window.location.href = "/Dashboard";
-            } else {
-                alert("There was an error deleting the business. Please try again.");
-            }
-        }).catch(error => console.error('Error:', error));
+    function checkMatch() {
+        const displayedId = "@Model.BusinessId";
+        const enteredId = document.getElementById('EnteredBusinessId').value;
+        const deleteButton = document.getElementById('DeleteButton');
+        deleteButton.disabled = (enteredId !== displayedId);
     }
 </script>
