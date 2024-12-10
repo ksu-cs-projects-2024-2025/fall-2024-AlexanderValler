@@ -28,20 +28,28 @@
         <h4>Calendars</h4>
         @if (Model.Calendars != null && Model.Calendars.Any())
         {
-                <ul class="list-group">
+            <ul class="list-group">
                 @foreach (var calendar in Model.Calendars)
                 {
-                            <li class="list-group-item">
-                                <h5>@calendar.Name</h5>
-                                <p>Participants: @string.Join(", ", calendar.UserBusinessCalendars.Select(ubc => ubc.User.UserName))</p>
-                                <a asp-page="/Calendars/View" asp-route-calendarId="@calendar.Id" class="text-primary">View Calendar</a>
-                            </li>
+                    <li class="list-group-item">
+                        <h5>@calendar.Name</h5>
+                        <p>Participants: @string.Join(", ", calendar.UserBusinessCalendars.Select(ubc => ubc.User.UserName))</p>
+                        <a asp-page="/Calendars/View" asp-route-calendarId="@calendar.Id" class="text-primary">View Calendar</a>
+                    </li>
                 }
-                </ul>
+            </ul>
         }
         else
         {
-                <p>No calendars available.</p>
+            <p>No calendars available.</p>
+        }
+
+        <!-- Create Calendar Button -->
+        @if (Model.IsOwnerOrManager)
+        {
+            <div class="mt-4">
+                <a asp-page="/Calendars/CreateCalendar" asp-route-businessId="@Model.Business.Id" class="btn btn-success">+ Create Calendar</a>
+            </div>
         }
     </div>
 

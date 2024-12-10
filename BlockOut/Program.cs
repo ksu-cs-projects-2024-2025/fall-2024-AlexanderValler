@@ -12,7 +12,6 @@ public class Program
 
         // Add services to the container
         builder.Services.AddRazorPages();
-        builder.Services.AddScoped<Scheduler.SchedulerService>();
 
         // Add Entity Framework Core and Identity with ApplicationUser and roles
         builder.Services.AddDbContext<ApplicationDbContext>(options =>

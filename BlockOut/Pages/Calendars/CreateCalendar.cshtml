@@ -1,0 +1,87 @@
+﻿@page "{businessId}"
+@model BlockOut.Pages.Calendars.CreateCalendarModel
+@{
+    ViewData["Title"] = "Create Calendar";
+}
+
+<div class="main-container">
+    <h2>Create a New Calendar</h2>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+
+        <!-- Calendar Name -->
+        <div class="mb-3">
+            <label for="calendarName" class="form-label">Calendar Name</label>
+            <input type="text" id="calendarName" name="CalendarName" class="form-control" required />
+        </div>
+
+        <!-- Participants -->
+        <div class="mb-3">
+            <label for="participants" class="form-label">Participants</label>
+            <select id="participants" name="SelectedParticipants" class="form-select" multiple>
+                @foreach (var member in Model.BusinessMembers)
+                {
+                    <option value="@member.User.Id">@member.User.UserName (@member.Role)</option>
+                }
+            </select>
+            <small class="text-muted">Hold Ctrl (Cmd on Mac) to select multiple participants.</small>
+        </div>
+
+        <!-- Shift Requirements -->
+        <div class="mb-3">
+            <h3>Shift Requirements</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Time Slot</th>
+                        <th>Min Workers</th>
+                        <th>Max Workers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dayHours in Model.BusinessOpenHours)
+                    {
+                        if (!dayHours.IsClosed)
+                        {
+                            @for (var time = dayHours.OpenTime.Value; time < dayHours.CloseTime.Value; time = time.Add(TimeSpan.FromHours(1)))
+                            {
+                                <tr>
+                                    <td>@Model.DaysOfWeek[dayHours.Day - 1]</td>
+                                    <td>
+                                        @time.ToString("hh\\:mm") - @(time.Add(TimeSpan.FromHours(1)) > dayHours.CloseTime.Value
+                            ? dayHours.CloseTime.Value.ToString("hh\\:mm")
+                            : time.Add(TimeSpan.FromHours(1)).ToString("hh\\:mm"))
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" name="MinWorkers[@dayHours.Day][@time]"
+                                               value="1" min="1" required oninput="validateShiftLimits(this)" />
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" name="MaxWorkers[@dayHours.Day][@time]"
+                                               value="1" min="1" required oninput="validateShiftLimits(this)" />
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+    </form>
+</div>
+
+<script>
+    function validateShiftLimits(input) {
+        const row = input.closest('tr');
+        const minInput = row.querySelector('input[name^="MinWorkers"]');
+        const maxInput = row.querySelector('input[name^="MaxWorkers"]');
+
+        if (parseInt(minInput.value) > parseInt(maxInput.value)) {
+            maxInput.value = minInput.value; // Adjust max to match min
+        }
+    }
+</script>

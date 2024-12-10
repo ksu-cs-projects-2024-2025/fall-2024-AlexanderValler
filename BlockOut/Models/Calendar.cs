@@ -1,7 +1,11 @@
-﻿namespace BlockOut.Models
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+namespace BlockOut.Models
 {
     public class Calendar
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Ensure the ID is auto-generated
         public string Id { get; set; }
         public string Name { get; set; }
         public string Type { get; set; } // "Weekly", "Monthly", etc.

@@ -16,12 +16,13 @@ namespace BlockOut.Data
         }
 
         // Custom entities
-        public DbSet<Schedule> Schedules { get; set; }
         public DbSet<Business> Businesses { get; set; }
         public DbSet<Calendar> Calendars { get; set; }
         public DbSet<OpenHours> OpenHours { get; set; }
         public DbSet<UserBusinessRole> UserBusinessRoles { get; set; } // For multi-role support
         public DbSet<UserBusinessCalendar> UserBusinessCalendars { get; set; }
+        public DbSet<Shift> Shifts { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
