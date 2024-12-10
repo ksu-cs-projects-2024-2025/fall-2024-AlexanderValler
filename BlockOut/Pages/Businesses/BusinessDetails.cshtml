@@ -35,6 +35,10 @@
                         <h5>@calendar.Name</h5>
                         <p>Participants: @string.Join(", ", calendar.UserBusinessCalendars.Select(ubc => ubc.User.UserName))</p>
                         <a asp-page="/Calendars/View" asp-route-calendarId="@calendar.Id" class="text-primary">View Calendar</a>
+                        @if (Model.IsOwnerOrManager)
+                        {
+                            <button class="btn btn-link text-danger" onclick="removeCalendar('@calendar.Id')">Remove</button>
+                        }
                     </li>
                 }
             </ul>
@@ -339,19 +343,47 @@
     }
 
     function toggleClosed(index) {
-    const openTimeInput = document.getElementById(`open-time-${index}`);
-    const closeTimeInput = document.getElementById(`close-time-${index}`);
+        const openTimeInput = document.getElementById(`open-time-${index}`);
+        const closeTimeInput = document.getElementById(`close-time-${index}`);
 
-    if (openTimeInput.disabled) {
-        // Reopen the day (enable inputs)
-        openTimeInput.disabled = false;
-        closeTimeInput.disabled = false;
-    } else {
-        // Mark the day as closed (disable inputs)
-        openTimeInput.disabled = true;
-        closeTimeInput.disabled = true;
-        openTimeInput.value = ""; // Clear the value
-        closeTimeInput.value = ""; // Clear the value
+        if (openTimeInput.disabled) {
+            // Reopen the day (enable inputs)
+            openTimeInput.disabled = false;
+            closeTimeInput.disabled = false;
+        } else {
+            // Mark the day as closed (disable inputs)
+            openTimeInput.disabled = true;
+            closeTimeInput.disabled = true;
+            openTimeInput.value = ""; // Clear the value
+            closeTimeInput.value = ""; // Clear the value
+        }
     }
-}
+
+    function removeCalendar(calendarId) {
+        if (!confirm("Are you sure you want to remove this calendar?")) {
+            return;
+        }
+
+        fetch('?handler=RemoveCalendar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ CalendarId: calendarId }) // Matches RemoveCalendarRequest
+        })
+
+            .then(response => {
+                if (response.ok) {
+                    location.reload(); // Reload the page to reflect the updated state
+                } else {
+                    response.text().then(text => console.error("Error response:", text)); // Log error details
+                    alert("Failed to remove the calendar. Please try again.");
+                }
+            })
+            .catch(error => {
+                console.error("Error removing calendar:", error);
+                alert("An error occurred while removing the calendar.");
+            });
+    }
 </script>

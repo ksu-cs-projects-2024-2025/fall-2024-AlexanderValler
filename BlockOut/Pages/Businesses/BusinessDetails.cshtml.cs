@@ -249,6 +249,38 @@ namespace BlockOut.Pages.Businesses
             public string Name { get; set; }
         }
 
+        public class RemoveCalendarRequest
+        {
+            public string CalendarId { get; set; }
+        }
+
+        public async Task<IActionResult> OnPostRemoveCalendarAsync([FromBody] RemoveCalendarRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request?.CalendarId))
+            {
+                return BadRequest("Invalid calendar ID.");
+            }
+
+            var calendar = await _context.Calendars
+                .Include(c => c.Business)
+                .FirstOrDefaultAsync(c => c.Id == request.CalendarId);
+
+            if (calendar == null || calendar.BusinessId != Business.Id)
+            {
+                return NotFound("Calendar not found.");
+            }
+
+            if (!IsOwnerOrManager)
+            {
+                return Forbid();
+            }
+
+            _context.Calendars.Remove(calendar);
+            await _context.SaveChangesAsync();
+
+            return new JsonResult(new { success = true });
+        }
+
 
 
         private string EncodeBusinessId(string businessId)

@@ -46,25 +46,8 @@
                         <li class="list-group-item">
                             <input type="radio" id="shift-@shift.Id" name="SelectedShift" value="@shift.Id" />
                             <label for="shift-@shift.Id">
-                                @Model.DaysOfWeek.ElementAtOrDefault(shift.Day - 1) ?? "Invalid Day"
-                                (@shift.StartTime.ToString("hh\\:mm") - @shift.EndTime.ToString("hh\\:mm"))
+                                Working hours distribution: @shift.Id
                             </label>
-                            <ul>
-                                @if (shift.HourlyRequirements != null && shift.HourlyRequirements.Any())
-                                {
-                                    @foreach (var requirement in shift.HourlyRequirements)
-                                    {
-                                        <li>
-                                            Hour: @requirement.HourStartTime.ToString("hh\\:mm") - @requirement.HourEndTime.ToString("hh\\:mm"),
-                                            Min Workers: @requirement.MinWorkers, Max Workers: @requirement.MaxWorkers
-                                        </li>
-                                    }
-                                }
-                                else
-                                {
-                                    <li>No hourly requirements available for this shift.</li>
-                                }
-                            </ul>
                         </li>
                     }
                 }
@@ -73,6 +56,7 @@
                     <li class="list-group-item">No shifts available. Please create one.</li>
                 }
             </ul>
+
             <div class="mt-3">
                 <button type="button" class="btn btn-secondary" onclick="editShift()">Edit Selected Shift</button>
                 <a asp-page="/Calendars/Shifts" asp-route-businessId="@Model.BusinessId" class="btn btn-success">Create Shifts</a>
@@ -97,4 +81,6 @@
             errorDiv.style.display = 'block'; // Show error message
         }
     }
+
+
 </script>

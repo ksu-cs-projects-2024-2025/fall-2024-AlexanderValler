@@ -38,7 +38,7 @@ namespace BlockOut.Pages.Calendars
         public List<OpenHours> BusinessOpenHours { get; set; } = new List<OpenHours>();
         public string[] DaysOfWeek { get; } = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
-        public async Task<IActionResult> OnGetAsync(string businessId)
+        public async Task<IActionResult> OnGetAsync(string businessId, string shiftId = null)
         {
             if (string.IsNullOrWhiteSpace(businessId))
             {
@@ -76,6 +76,29 @@ namespace BlockOut.Pages.Calendars
                 .Include(s => s.HourlyRequirements)
                 .Where(s => s.BusinessId == businessId)
                 .ToListAsync();
+
+            // If a shiftId is provided, load the shift details for editing
+            if (!string.IsNullOrWhiteSpace(shiftId))
+            {
+                if (!int.TryParse(shiftId, out var shiftIdInt))
+                {
+                    return BadRequest("Invalid Shift ID format.");
+                }
+
+                Shift = await _context.Shifts
+                    .Include(s => s.HourlyRequirements)
+                    .FirstOrDefaultAsync(s => s.Id == shiftIdInt && s.BusinessId == businessId);
+
+                if (Shift == null)
+                {
+                    return NotFound("Shift not found.");
+                }
+
+                // Pre-fill the CalendarId and HourlyRequirements
+                CalendarId = Shift.CalendarId;
+                HourlyRequirements = Shift.HourlyRequirements;
+            }
+
 
             return Page();
         }
